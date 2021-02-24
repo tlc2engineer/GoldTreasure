@@ -1,0 +1,313 @@
+---
+swagger: "2.0"
+info:
+  description: "## Usage\n## List of all custom errors\nFirst number is HTTP Status\
+    \ code, second is value of \"code\" field in returned JSON object, text description\
+    \ may or may not match \"message\" field in returned JSON object.\n- 422.1000:\
+    \ wrong coordinates\n- 422.1001: wrong depth\n- 409.1002: no more active licenses\
+    \ allowed\n- 409.1003: treasure is not digged\n"
+  version: "1.0.0"
+  title: "HighLoad Cup 2021"
+basePath: "/"
+schemes:
+- "http"
+consumes:
+- "application/json"
+produces:
+- "application/json"
+paths:
+  /health-check:
+    get:
+      description: "Returns 200 if service works okay."
+      operationId: "healthCheck"
+      parameters: []
+      responses:
+        "200":
+          description: "Extra details about service status, if any."
+          schema:
+            type: "object"
+            additionalProperties: {}
+        default:
+          description: "General errors using same model as used by go-swagger for\
+            \ validation errors."
+          schema:
+            $ref: "#/definitions/error"
+      security: []
+  /balance:
+    get:
+      description: "Returns a current balance."
+      operationId: "getBalance"
+      parameters: []
+      responses:
+        "200":
+          description: "Current balance."
+          schema:
+            $ref: "#/definitions/balance"
+        default:
+          description: "General errors using same model as used by go-swagger for\
+            \ validation errors."
+          schema:
+            $ref: "#/definitions/error"
+  /licenses:
+    get:
+      description: "Returns a list of issued licenses."
+      operationId: "listLicenses"
+      parameters: []
+      responses:
+        "200":
+          description: "List of issued licenses."
+          schema:
+            $ref: "#/definitions/licenseList"
+        default:
+          description: "General errors using same model as used by go-swagger for\
+            \ validation errors."
+          schema:
+            $ref: "#/definitions/error"
+    post:
+      description: "Issue a new license."
+      operationId: "issueLicense"
+      parameters:
+      - in: "body"
+        name: "args"
+        description: "Amount of money to spend for a license. Empty array for get\
+          \ free license. Maximum 10 active licenses"
+        required: false
+        schema:
+          $ref: "#/definitions/wallet"
+        x-exportParamName: "Args"
+      responses:
+        "200":
+          description: "Issued license."
+          schema:
+            $ref: "#/definitions/license"
+        default:
+          description: "- 409.1002: no more active licenses allowed\n"
+          schema:
+            $ref: "#/definitions/error"
+  /explore:
+    post:
+      description: "Returns amount of treasures in the provided area at full depth."
+      operationId: "exploreArea"
+      parameters:
+      - in: "body"
+        name: "args"
+        description: "Area to be explored."
+        required: true
+        schema:
+          $ref: "#/definitions/area"
+        x-exportParamName: "Args"
+      responses:
+        "200":
+          description: "Report about found treasures."
+          schema:
+            $ref: "#/definitions/report"
+        default:
+          description: "- 422.1000: wrong coordinates\n"
+          schema:
+            $ref: "#/definitions/error"
+  /dig:
+    post:
+      description: "Dig at given point and depth, returns found treasures."
+      operationId: "dig"
+      parameters:
+      - in: "body"
+        name: "args"
+        description: "License, place and depth to dig."
+        required: true
+        schema:
+          $ref: "#/definitions/dig"
+        x-exportParamName: "Args"
+      responses:
+        "200":
+          description: "List of treasures found."
+          schema:
+            $ref: "#/definitions/treasureList"
+        default:
+          description: "- 422.1000: wrong coordinates\n- 422.1001: wrong depth\n"
+          schema:
+            $ref: "#/definitions/error"
+  /cash:
+    post:
+      description: "Exchange provided treasure for money."
+      operationId: "cash"
+      parameters:
+      - in: "body"
+        name: "args"
+        description: "Treasure for exchange."
+        required: true
+        schema:
+          $ref: "#/definitions/treasure"
+        x-exportParamName: "Args"
+      responses:
+        "200":
+          description: "Payment for treasure."
+          schema:
+            $ref: "#/definitions/wallet"
+        default:
+          description: "- 409.1003: treasure is not digged\n"
+          schema:
+            $ref: "#/definitions/error"
+definitions:
+  error:
+    type: "object"
+    required:
+    - "code"
+    - "message"
+    properties:
+      code:
+        type: "integer"
+        format: "int32"
+        description: "Either same as HTTP Status Code OR >= 600 with HTTP Status Code\
+          \ 422"
+      message:
+        type: "string"
+    description: "This model should match output of errors returned by go-swagger\n\
+      (like failed validation), to ensure our handlers use same format.\n"
+  balance:
+    type: "object"
+    required:
+    - "balance"
+    - "wallet"
+    properties:
+      balance:
+        type: "integer"
+        format: "uint32"
+      wallet:
+        $ref: "#/definitions/wallet"
+    description: "Current balance and wallet with up to 1000 coins."
+    example:
+      wallet: ""
+      balance: 0
+  wallet:
+    type: "array"
+    description: "Wallet with some coins."
+    items:
+      type: "integer"
+      format: "uint32"
+    uniqueItems: true
+    maxItems: 1000
+  amount:
+    type: "integer"
+    minimum: 0
+    description: "Non-negative amount of treasures/etc."
+  license:
+    type: "object"
+    required:
+    - "digAllowed"
+    - "digUsed"
+    - "id"
+    properties:
+      id:
+        type: "integer"
+      digAllowed:
+        $ref: "#/definitions/amount"
+      digUsed:
+        $ref: "#/definitions/amount"
+    description: "License for digging."
+    example:
+      digAllowed: {}
+      id: 0
+  licenseList:
+    type: "array"
+    description: "List of issued licenses."
+    items:
+      $ref: "#/definitions/license"
+  area:
+    type: "object"
+    required:
+    - "posX"
+    - "posY"
+    properties:
+      posX:
+        type: "integer"
+        minimum: 0
+      posY:
+        type: "integer"
+        minimum: 0
+      sizeX:
+        type: "integer"
+        minimum: 1
+      sizeY:
+        type: "integer"
+        minimum: 1
+    example:
+      posX: 0
+      posY: 0
+      sizeX: 1
+      sizeY: 1
+  report:
+    type: "object"
+    required:
+    - "amount"
+    - "area"
+    properties:
+      area:
+        $ref: "#/definitions/area"
+      amount:
+        $ref: "#/definitions/amount"
+    example:
+      area:
+        posX: 0
+        posY: 0
+        sizeX: 1
+        sizeY: 1
+      amount: {}
+  dig:
+    type: "object"
+    required:
+    - "depth"
+    - "licenseID"
+    - "posX"
+    - "posY"
+    properties:
+      licenseID:
+        type: "integer"
+        description: "ID of the license this request is attached to."
+      posX:
+        type: "integer"
+        minimum: 0
+      posY:
+        type: "integer"
+        minimum: 0
+      depth:
+        type: "integer"
+        minimum: 1
+        maximum: 100
+  treasure:
+    type: "string"
+    description: "Treasure ID."
+  treasureList:
+    type: "array"
+    description: "List of treasures."
+    items:
+      $ref: "#/definitions/treasure"
+responses:
+  error:
+    description: "General errors using same model as used by go-swagger for validation\
+      \ errors."
+    schema:
+      $ref: "#/definitions/error"
+  balance:
+    description: "Current balance."
+    schema:
+      $ref: "#/definitions/balance"
+  licenseList:
+    description: "List of issued licenses."
+    schema:
+      $ref: "#/definitions/licenseList"
+  license:
+    description: "Issued license."
+    schema:
+      $ref: "#/definitions/license"
+  explore:
+    description: "Report about found treasures."
+    schema:
+      $ref: "#/definitions/report"
+  dig:
+    description: "List of treasures found."
+    schema:
+      $ref: "#/definitions/treasureList"
+  cash:
+    description: "Payment for treasure."
+    schema:
+      $ref: "#/definitions/wallet"
