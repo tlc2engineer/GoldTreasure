@@ -142,6 +142,64 @@ func DigPost(depth int64, licID int64, posX int64, posY int64) (models.TreasureL
 	return nil, fmt.Errorf("Status not ok:%d", resp.StatusCode)
 }
 
+/*PostCash - посылка cash*/
+func PostCash(treasure models.Treasure) (*models.Wallet, error) {
+	req := BasicPath + "/cash"
+
+	bts, err := json.Marshal(treasure)
+	if err != nil {
+		return nil, err
+	}
+	buff := bytes.NewBuffer(bts)
+	resp, err := http.Post(req, "application/json", buff)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode == http.StatusOK {
+		bts, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return nil, err
+		}
+		wallet := models.Wallet{}
+		err = json.Unmarshal(bts, &wallet)
+		if err != nil {
+			return nil, err
+		}
+		return &wallet, nil
+	}
+	_, err = getError(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	return nil, fmt.Errorf("Status not ok:%d", resp.StatusCode)
+}
+
+/*GetLicenses - получение списка лицензий*/
+func GetLicenses() (models.LicenseList, error) {
+	req := BasicPath + "/licenses"
+	resp, err := http.Get(req)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode == http.StatusOK {
+		bts, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return nil, err
+		}
+		licList := models.LicenseList{}
+		err = json.Unmarshal(bts, &licList)
+		if err != nil {
+			return nil, err
+		}
+		return licList, nil
+	}
+	_, err = getError(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	return nil, fmt.Errorf("Status not ok:%d", resp.StatusCode)
+}
+
 /*GetBasicPath - получение базового пути*/
 func GetBasicPath() {
 	address := os.Getenv("ADDRESS")
