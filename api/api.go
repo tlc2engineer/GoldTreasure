@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -31,7 +32,10 @@ func GetBalance() (*models.Balance, error) {
 			}
 			return &balance, nil
 		}
-		return nil, fmt.Errorf(fmt.Sprintf("STATUS NOT 200:%s", err))
+		_, err = getError(resp.Body)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return nil, err
 }
@@ -68,6 +72,10 @@ func Explore(x, y int64) (*models.Amount, error) {
 		return report.Amount, nil
 
 	}
+	_, err = getError(resp.Body)
+	if err != nil {
+		return nil, err
+	}
 	return nil, err
 
 }
@@ -77,8 +85,7 @@ func PostLicense() (*models.License, error) {
 	req := BasicPath + "/licenses"
 	fmt.Println("license post", req)
 	wallet := models.Wallet{}
-	issue := IssueLicense{Args: wallet}
-	bts, err := json.Marshal(issue)
+	bts, err := json.Marshal(wallet)
 	if err != nil {
 		return nil, err
 	}
@@ -96,11 +103,43 @@ func PostLicense() (*models.License, error) {
 		json.Unmarshal(bts, &license)
 		return &license, err
 	}
+	_, err = getError(resp.Body)
+	if err != nil {
+		return nil, err
+	}
 	return nil, fmt.Errorf("Status not ok:%d", resp.StatusCode)
 }
 
-type IssueLicense struct {
-	Args models.Wallet `json:"args"`
+/*DigPost -  копать*/
+func DigPost(depth int64, licID int64, posX int64, posY int64) (models.TreasureList, error) {
+	req := BasicPath + "/dig"
+	dig := models.Dig{Depth: &depth, LicenseID: &licID, PosX: &posX, PosY: &posY}
+	bts, err := json.Marshal(dig)
+	if err != nil {
+		return nil, err
+	}
+	buff := bytes.NewBuffer(bts)
+	resp, err := http.Post(req, "application/json", buff)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode == http.StatusOK {
+		bts, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return nil, err
+		}
+		treasures := models.TreasureList{}
+		err = json.Unmarshal(bts, &treasures)
+		if err != nil {
+			return nil, err
+		}
+		return treasures, nil
+	}
+	_, err = getError(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	return nil, fmt.Errorf("Status not ok:%d", resp.StatusCode)
 }
 
 /*GetBasicPath - получение базового пути*/
@@ -111,5 +150,17 @@ func GetBasicPath() {
 	}
 	BasicPath = fmt.Sprintf("http://%s:8000", address)
 	fmt.Printf("basic path: %s\n", BasicPath)
+
+}
+
+func getError(rc io.ReadCloser) (*models.Error, error) {
+	bts, err := ioutil.ReadAll(rc)
+	if err != nil {
+		return nil, err
+	}
+	error := models.Error{}
+	json.Unmarshal(bts, &error)
+	fmt.Println(error.Message, error.Code)
+	return &error, nil
 
 }
