@@ -45,15 +45,7 @@ func main() {
 	// 	}
 	// }
 	//---------post license-----------
-	for license == nil {
-		lic, err := api.PostLicense()
-		if err != nil {
-			fmt.Println("lic err:", err)
-		} else {
-			license = lic
-			fmt.Println("license:", *lic.ID, *lic.DigUsed, *lic.DigAllowed)
-		}
-	}
+	license = updateLicense()
 	//------------------------------
 
 	//------------тестируем explore-------------
@@ -67,12 +59,16 @@ func main() {
 				if *amount != 0 {
 					count := *amount
 					depth := 1
-					for count > 0 && depth < 10 && *license.DigAllowed > 0 {
+					for count > 0 && depth < 10 {
+						if *license.DigAllowed <= *license.DigUsed {
+							license = updateLicense()
+						}
 						tlist, err := api.DigPost(int64(depth), *license.ID, int64(x), int64(y))
 						if err != nil {
 							fmt.Println(err)
 						} else {
 							fmt.Println("DIG!")
+							*license.DigUsed++
 							depth++
 							if tlist != nil {
 								for _, treasure := range tlist {
@@ -93,4 +89,17 @@ func main() {
 		}
 	}
 
+}
+
+func updateLicense() *models.License {
+	for {
+		lic, err := api.PostLicense()
+		if err != nil {
+			fmt.Println("lic err:", err)
+		} else {
+
+			fmt.Println("license:", *lic.ID, *lic.DigUsed, *lic.DigAllowed)
+			return lic
+		}
+	}
 }
