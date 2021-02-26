@@ -17,7 +17,6 @@ var BasicPath string
 /*GetBalance - получение баланса*/
 func GetBalance() (*models.Balance, error) {
 	req := fmt.Sprintf("%s/balance", BasicPath)
-	fmt.Println("balance", req)
 	resp, err := http.Get(req)
 	if err == nil {
 		if resp.StatusCode == http.StatusOK {
@@ -43,7 +42,6 @@ func GetBalance() (*models.Balance, error) {
 /*Explore - разведка точки x,y*/
 func Explore(x, y int64) (*models.Amount, error) {
 	req := BasicPath + "/explore"
-	fmt.Println("explore", req)
 	area := models.Area{
 		PosX:  &x,
 		PosY:  &y,
@@ -72,18 +70,17 @@ func Explore(x, y int64) (*models.Amount, error) {
 		return report.Amount, nil
 
 	}
-	_, err = getError(resp.Body)
+	me, err := getError(resp.Body)
 	if err != nil {
 		return nil, err
 	}
-	return nil, err
+	return nil, fmt.Errorf("Not 200:%d %s", *me.Code, *me.Message)
 
 }
 
 /*PostLicense - запрос лицензии*/
 func PostLicense() (*models.License, error) {
 	req := BasicPath + "/licenses"
-	fmt.Println("license post", req)
 	wallet := models.Wallet{}
 	bts, err := json.Marshal(wallet)
 	if err != nil {
@@ -135,10 +132,14 @@ func DigPost(depth int64, licID int64, posX int64, posY int64) (models.TreasureL
 		}
 		return treasures, nil
 	}
+	if resp.StatusCode == 404 {
+		return nil, nil
+	}
 	_, err = getError(resp.Body)
 	if err != nil {
 		return nil, err
 	}
+
 	return nil, fmt.Errorf("Status not ok:%d", resp.StatusCode)
 }
 
