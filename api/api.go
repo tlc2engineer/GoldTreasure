@@ -70,11 +70,11 @@ func Explore(x, y int64) (*models.Amount, error) {
 		return report.Amount, nil
 
 	}
-	_, err = getError(resp.Body)
+	me, err := getError(resp.Body)
 	if err != nil {
 		return nil, err
 	}
-	return nil, err
+	return nil, fmt.Errorf("Not 200:%d %s", *me.Code, *me.Message)
 
 }
 

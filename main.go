@@ -49,8 +49,8 @@ func main() {
 	//------------------------------
 
 	//------------тестируем explore-------------
-	for x := 1; x <= 3500; x++ {
-		for y := 1; y <= 3500; y++ {
+	for x := 1; x < 3500; x++ {
+		for y := 1; y < 3500; y++ {
 			amount, err := api.Explore(int64(x), int64(y))
 			if err != nil {
 				fmt.Println("Exp err:", err)
@@ -93,8 +93,6 @@ func updateLicense() *models.License {
 		if err != nil {
 			fmt.Println("lic err:", err)
 		} else {
-
-			fmt.Println("license:", *lic.ID, *lic.DigUsed, *lic.DigAllowed)
 			return lic
 		}
 	}
