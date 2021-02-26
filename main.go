@@ -52,10 +52,11 @@ func main() {
 		fmt.Println("L list", err)
 	} else {
 		for _, lic := range lst {
-			fmt.Println("lic:", *lic.ID)
+			fmt.Println("lic list error:", *lic.ID)
 		}
 	}
-
+	chTrlist := make(chan models.TreasureList, 2)
+	go PostCashG(chTrlist)
 	//------------тестируем explore-------------
 	for x := 1; x < 3500; x++ {
 		for y := 1; y < 3500; y++ {
@@ -77,14 +78,16 @@ func main() {
 							*license.DigUsed++
 							depth++
 							if tlist != nil {
-								for _, treasure := range tlist {
-									_, err := api.PostCash(treasure)
-									if err != nil {
-										fmt.Println(err)
-									} else {
-										count--
-									}
-								}
+								count--
+								chTrlist <- tlist
+								// for _, treasure := range tlist {
+								// 	_, err := api.PostCash(treasure)
+								// 	if err != nil {
+								// 		fmt.Println(err)
+								// 	} else {
+								// 		count--
+								// 	}
+								// }
 							}
 						}
 					}
@@ -96,12 +99,56 @@ func main() {
 }
 
 func updateLicense() *models.License {
+
 	for {
 		lic, err := api.PostLicense()
 		if err != nil {
-			fmt.Println("lic err:", err)
+			fmt.Println("license err:", err)
 		} else {
 			return lic
 		}
+	}
+}
+
+/*PostCashG - горутина отправки сообщений*/
+func PostCashG(ch chan models.TreasureList) {
+	for tlist := range ch {
+		for _, treasure := range tlist {
+			_, err := api.PostCash(treasure)
+			if err != nil {
+				fmt.Println(err)
+			}
+		}
+	}
+}
+
+/*DigData - вспомагательная структура*/
+type DigData struct {
+	x, y, amount int64
+}
+
+/*DigG - горутина копания*/
+func DigG(ch chan DigData, cht chan models.TreasureList) {
+	var license *models.License // лицензия
+	for ddata := range ch {
+		trCount := ddata.amount // число ненайденных сокровиц
+		depth := 1              //глубина
+		for trCount > 0 && depth <= 10 {
+			if license == nil || *license.DigAllowed <= *license.DigUsed {
+				license = updateLicense()
+			}
+			tlist, err := api.DigPost(int64(depth), *license.ID, ddata.x, ddata.y)
+			if err != nil {
+				fmt.Println(err)
+			} else {
+				*license.DigUsed++
+				depth++
+				if tlist != nil {
+					trCount--
+					cht <- tlist
+				}
+			}
+		}
+
 	}
 }
