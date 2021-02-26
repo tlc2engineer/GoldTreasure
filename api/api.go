@@ -132,14 +132,14 @@ func DigPost(depth int64, licID int64, posX int64, posY int64) (models.TreasureL
 		}
 		return treasures, nil
 	}
-
+	if resp.StatusCode == 404 {
+		return nil, nil
+	}
 	_, err = getError(resp.Body)
 	if err != nil {
 		return nil, err
 	}
-	if resp.StatusCode == 404 {
-		return nil, nil
-	}
+
 	return nil, fmt.Errorf("Status not ok:%d", resp.StatusCode)
 }
 
