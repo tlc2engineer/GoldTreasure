@@ -55,6 +55,14 @@ func main() {
 		}
 	}
 	//------------------------------
+	lst, err := api.GetLicenses()
+	if err != nil {
+		fmt.Println("L list", err)
+	} else {
+		for _, lic := range lst {
+			fmt.Println("lic:", *lic.ID)
+		}
+	}
 
 	//------------тестируем explore-------------
 	for x := 1; x <= 20; x++ {

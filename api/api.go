@@ -218,7 +218,7 @@ func getError(rc io.ReadCloser) (*models.Error, error) {
 	}
 	error := models.Error{}
 	json.Unmarshal(bts, &error)
-	fmt.Println(error.Message, error.Code)
+	fmt.Println(*error.Message, *error.Code)
 	return &error, nil
 
 }
