@@ -35,6 +35,8 @@ func main() {
 	chDig := make(chan DigData, 5)
 	go DigG(chDig, chTrlist)
 	go DigG(chDig, chTrlist)
+	go DigG(chDig, chTrlist)
+	go DigG(chDig, chTrlist)
 	//------------тестируем explore-------------
 	for x := 1; x < 3500; x++ {
 		for y := 1; y < 3500; y++ {
@@ -58,7 +60,7 @@ func updateLicense() *models.License {
 	for {
 		lic, err := api.PostLicense()
 		if err != nil {
-			fmt.Println("license err:", err)
+			//fmt.Println("license err:", err)
 		} else {
 			return lic
 		}
