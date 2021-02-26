@@ -100,9 +100,11 @@ func PostLicense() (*models.License, error) {
 		json.Unmarshal(bts, &license)
 		return &license, err
 	}
-	_, err = getError(resp.Body)
-	if err != nil {
-		return nil, err
+	if resp.StatusCode != 502 {
+		_, err = getError(resp.Body)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return nil, fmt.Errorf("Status not ok:%d", resp.StatusCode)
 }

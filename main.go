@@ -30,34 +30,10 @@ func main() {
 	}
 	// базовый путь
 	api.GetBasicPath()
-	//var license *models.License
-	// тестируем balance
-	//
-	//------------тестируем explore-------------
-	// for x := 1; x <= 20; x++ {
-	// 	for y := 1; y <= 20; y++ {
-	// 		amount, err := api.Explore(int64(x), int64(y))
-	// 		if err != nil {
-	// 			fmt.Println("Exp err:", err)
-	// 		} else {
-	// 			fmt.Println(x, y, *amount)
-	// 		}
-	// 	}
-	// }
-	//---------post license-----------
-	//license = updateLicense()
-	//------------------------------
-	// lst, err := api.GetLicenses()
-	// if err != nil {
-	// 	fmt.Println("L list", err)
-	// } else {
-	// 	for _, lic := range lst {
-	// 		fmt.Println("lic list error:", *lic.ID)
-	// 	}
-	// }
 	chTrlist := make(chan models.TreasureList, 5)
 	go PostCashG(chTrlist)
 	chDig := make(chan DigData, 5)
+	go DigG(chDig, chTrlist)
 	go DigG(chDig, chTrlist)
 	//------------тестируем explore-------------
 	for x := 1; x < 3500; x++ {
@@ -69,32 +45,7 @@ func main() {
 				if *amount != 0 {
 					digData := DigData{x: int64(x), y: int64(y), amount: int64(*amount)}
 					chDig <- digData
-					// count := *amount
-					// depth := 1
-					// for count > 0 && depth <= 10 {
-					// 	if *license.DigAllowed <= *license.DigUsed {
-					// 		license = updateLicense()
-					// 	}
-					// 	tlist, err := api.DigPost(int64(depth), *license.ID, int64(x), int64(y))
-					// 	if err != nil {
-					// 		fmt.Println(err)
-					// 	} else {
-					// 		*license.DigUsed++
-					// 		depth++
-					// 		if tlist != nil {
-					// 			count--
-					// 			chTrlist <- tlist
-					// 			// for _, treasure := range tlist {
-					// 			// 	_, err := api.PostCash(treasure)
-					// 			// 	if err != nil {
-					// 			// 		fmt.Println(err)
-					// 			// 	} else {
-					// 			// 		count--
-					// 			// 	}
-					// 			// }
-					// 		}
-					// 	}
-					// }
+
 				}
 			}
 		}
