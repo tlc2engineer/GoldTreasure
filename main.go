@@ -49,17 +49,16 @@ func main() {
 	//------------------------------
 
 	//------------тестируем explore-------------
-	for x := 1; x <= 20; x++ {
-		for y := 1; y <= 20; y++ {
+	for x := 1; x <= 3500; x++ {
+		for y := 1; y <= 3500; y++ {
 			amount, err := api.Explore(int64(x), int64(y))
 			if err != nil {
 				fmt.Println("Exp err:", err)
 			} else {
-				fmt.Println(x, y, *amount)
 				if *amount != 0 {
 					count := *amount
 					depth := 1
-					for count > 0 && depth < 10 {
+					for count > 0 && depth <= 10 {
 						if *license.DigAllowed <= *license.DigUsed {
 							license = updateLicense()
 						}
@@ -67,17 +66,14 @@ func main() {
 						if err != nil {
 							fmt.Println(err)
 						} else {
-							fmt.Println("DIG!")
 							*license.DigUsed++
 							depth++
 							if tlist != nil {
 								for _, treasure := range tlist {
-									fmt.Println("FIND!")
-									wallet, err := api.PostCash(treasure)
+									_, err := api.PostCash(treasure)
 									if err != nil {
 										fmt.Println(err)
 									} else {
-										fmt.Println("Post good", wallet)
 										count--
 									}
 								}

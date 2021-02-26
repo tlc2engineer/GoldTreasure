@@ -17,7 +17,6 @@ var BasicPath string
 /*GetBalance - получение баланса*/
 func GetBalance() (*models.Balance, error) {
 	req := fmt.Sprintf("%s/balance", BasicPath)
-	fmt.Println("balance", req)
 	resp, err := http.Get(req)
 	if err == nil {
 		if resp.StatusCode == http.StatusOK {
@@ -43,7 +42,6 @@ func GetBalance() (*models.Balance, error) {
 /*Explore - разведка точки x,y*/
 func Explore(x, y int64) (*models.Amount, error) {
 	req := BasicPath + "/explore"
-	fmt.Println("explore", req)
 	area := models.Area{
 		PosX:  &x,
 		PosY:  &y,
@@ -83,7 +81,6 @@ func Explore(x, y int64) (*models.Amount, error) {
 /*PostLicense - запрос лицензии*/
 func PostLicense() (*models.License, error) {
 	req := BasicPath + "/licenses"
-	fmt.Println("license post", req)
 	wallet := models.Wallet{}
 	bts, err := json.Marshal(wallet)
 	if err != nil {
@@ -222,7 +219,7 @@ func getError(rc io.ReadCloser) (*models.Error, error) {
 	}
 	error := models.Error{}
 	json.Unmarshal(bts, &error)
-	fmt.Println(error.Message, error.Code)
+	fmt.Println(*error.Message, *error.Code)
 	return &error, nil
 
 }
