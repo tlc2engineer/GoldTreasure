@@ -38,6 +38,7 @@ func main() {
 	chCoin := make(chan uint32, 100)
 	go PostCashG(chTrlist, chCoin, true)
 	go PostCashG(chTrlist, chCoin, false)
+	go PostCashG(chTrlist, chCoin, false)
 	chDig := make(chan DigData, 5)
 	chLic := make(chan *models.License, 10)
 	chUsedLic := make(chan *int64)
@@ -52,6 +53,7 @@ func main() {
 
 		}
 	}()
+	go LicGor(chCoin, chLic)
 	go LicGor(chCoin, chLic)
 	go LicGor(chCoin, chLic)
 	go DigG(chDig, chTrlist, chLic, chUsedLic)
@@ -101,14 +103,15 @@ func PostCashG(ch chan models.TreasureList, chCoins chan uint32, toLic bool) {
 	for tlist := range ch {
 		for _, treasure := range tlist {
 			w, err := api.PostCash(treasure)
+			if err != nil && err.Error() == "Status not ok:503" {
+				w, err = api.PostCash(treasure)
+			}
 			if err != nil {
 				fmt.Println("Post cash err", err)
 			} else {
 				if w != nil && toLic {
 					for _, coin := range *w {
-						if len(chCoins) < 90 {
-							chCoins <- coin
-						}
+						chCoins <- coin
 					}
 				}
 			}
