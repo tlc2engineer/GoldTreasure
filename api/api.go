@@ -79,9 +79,8 @@ func Explore(x, y int64) (*models.Amount, error) {
 }
 
 /*PostLicense - запрос лицензии*/
-func PostLicense() (*models.License, error) {
+func PostLicense(wallet models.Wallet) (*models.License, error) {
 	req := BasicPath + "/licenses"
-	wallet := models.Wallet{}
 	bts, err := json.Marshal(wallet)
 	if err != nil {
 		return nil, err

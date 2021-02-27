@@ -31,8 +31,13 @@ func main() {
 	// базовый путь
 	api.GetBasicPath()
 	chTrlist := make(chan models.TreasureList, 5)
-	go PostCashG(chTrlist)
+	chCoin := make(chan uint32, 100)
+	go PostCashG(chTrlist, chCoin)
 	chDig := make(chan DigData, 5)
+	go DigG(chDig, chTrlist)
+	go DigG(chDig, chTrlist)
+	go DigG(chDig, chTrlist)
+	go DigG(chDig, chTrlist)
 	go DigG(chDig, chTrlist)
 	go DigG(chDig, chTrlist)
 	go DigG(chDig, chTrlist)
@@ -58,7 +63,8 @@ func main() {
 func updateLicense() *models.License {
 
 	for {
-		lic, err := api.PostLicense()
+		wallet := models.Wallet{}
+		lic, err := api.PostLicense(wallet)
 		if err != nil {
 			//fmt.Println("license err:", err)
 		} else {
@@ -68,13 +74,18 @@ func updateLicense() *models.License {
 }
 
 /*PostCashG - горутина отправки сообщений*/
-func PostCashG(ch chan models.TreasureList) {
+func PostCashG(ch chan models.TreasureList, chCoins chan uint32) {
 	for tlist := range ch {
 		for _, treasure := range tlist {
 			_, err := api.PostCash(treasure)
 			if err != nil {
 				fmt.Println(err)
 			}
+			// for _, coin := range *w {
+			// 	if len(chCoins) < 90 {
+			// 		chCoins <- coin
+			// 	}
+			// }
 		}
 	}
 }
