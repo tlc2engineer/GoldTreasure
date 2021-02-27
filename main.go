@@ -103,7 +103,7 @@ func PostCashG(ch chan models.TreasureList, chCoins chan uint32, toLic bool) {
 	for tlist := range ch {
 		for _, treasure := range tlist {
 			w, err := api.PostCash(treasure)
-			if err != nil && err.Error() == "Status not ok:503" {
+			for err != nil && err.Error() == "Status not ok:503" {
 				w, err = api.PostCash(treasure)
 			}
 			if err != nil {
@@ -162,9 +162,14 @@ func LicGor(chCoin chan uint32, chLic chan *models.License) {
 
 	var numCoin, numFree int
 	for {
+		mu.Lock()
 		if numLic >= 10 {
+			mu.Unlock()
 			time.Sleep(time.Millisecond)
 			continue
+		} else {
+			numLic++
+			mu.Unlock()
 		}
 		select {
 
@@ -178,10 +183,11 @@ func LicGor(chCoin chan uint32, chLic chan *models.License) {
 		}
 		lic, err := api.PostLicense(wallet)
 		if err != nil {
-		} else {
 			mu.Lock()
-			numLic++
+			numLic--
 			mu.Unlock()
+		} else {
+
 			chLic <- lic
 		}
 	}
