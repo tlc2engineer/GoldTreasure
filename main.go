@@ -82,8 +82,8 @@ func main() {
 	// 		}
 	// 	}
 	// }
-	//go exploreSegment(0, 0, 3500, 1750, 3, chDig)
-	exploreSegment(0, 1750, 3498, 3498, 4, chDig)
+	//go exploreSegment(0, 0, 3498, 1748, 4, chDig)
+	exploreSegment(0, 1750, 3498, 3498, 3, chDig)
 
 }
 
@@ -196,7 +196,9 @@ func LicGor(chCoin chan uint32, chLic chan *models.License) {
 }
 
 /*exploreArea - исследование области*/
-func exploreArea(xbg, ybg, xend, yend int, ch chan DigData) {
+func exploreArea(xbg, ybg, xend, yend int, ch chan DigData, targetMoney int) int {
+	sum := 0
+m1:
 	for x := xbg; x < xend; x++ {
 		for y := ybg; y < yend; y++ {
 			amount, err := api.Explore(int64(x), int64(y), 1, 1)
@@ -209,15 +211,24 @@ func exploreArea(xbg, ybg, xend, yend int, ch chan DigData) {
 						fmt.Println("Chan full!")
 					}
 					ch <- digData
+					sum += int(*amount)
+					if targetMoney == sum {
+						break m1
+					}
 
 				}
 			}
 		}
 	}
+	if sum != targetMoney {
+		fmt.Printf("Exp error t:%d s:%d\n", targetMoney, sum)
+	}
+	return targetMoney
 }
 
 /*exploreSegment - исследование сегмента*/
-func exploreSegment(xbg, ybg, xend, yend, size int, ch chan DigData) {
+func exploreSegment(xbg, ybg, xend, yend, size int, ch chan DigData) int {
+	sum := 0
 	for x := xbg; x < xend; x += size {
 		for y := ybg; y < yend; y += size {
 			amount, err := api.Explore(int64(x), int64(y), int64(size), int64(size))
@@ -226,18 +237,29 @@ func exploreSegment(xbg, ybg, xend, yend, size int, ch chan DigData) {
 			} else {
 				if *amount != 0 {
 					if size >= 4 {
+						money := int(*amount)
+						tsum := 0
+					m1:
 						for x1 := x; x1 < x+size; x1 += size / 2 {
 							for y1 := y; y1 < y+size; y1 += size / 2 {
-								go exploreSegment(x1, y1, x+size/2, y+size/2, size/2, ch)
+								am := exploreSegment(x1, y1, x+size/2, y+size/2, size/2, ch)
+								sum += am
+								tsum += am
+								if money == tsum {
+									break m1
+								}
 							}
 						}
+						fmt.Printf("t: %d fact: %d ", money, tsum)
 					} else {
-						go exploreArea(x, y, x+size, y+size, ch)
+						money := int(*amount)
+						sum += exploreArea(x, y, x+size, y+size, ch, money)
 					}
 
 				}
 			}
 		}
 	}
+	return sum
 
 }
