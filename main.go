@@ -82,8 +82,8 @@ func main() {
 	// 		}
 	// 	}
 	// }
-	go exploreArea(0, 0, 3500, 1750, chDig)
-	exploreArea(0, 1750, 3500, 3500, chDig)
+	//go exploreSegment(0, 0, 3500, 1750, 3, chDig)
+	exploreSegment(0, 1750, 3500, 3500, 3, chDig)
 
 }
 
@@ -218,8 +218,8 @@ func exploreArea(xbg, ybg, xend, yend int, ch chan DigData) {
 
 /*exploreSegment - исследование сегмента*/
 func exploreSegment(xbg, ybg, xend, yend, size int, ch chan DigData) {
-	for x := xbg; x < xend; x += size {
-		for y := ybg; y < yend; y += size {
+	for x := xbg; x < xend-size; x += size {
+		for y := ybg; y < yend-size; y += size {
 			amount, err := api.Explore(int64(x), int64(y), int64(size), int64(size))
 			if err != nil {
 				fmt.Println("Exp err:", err)
