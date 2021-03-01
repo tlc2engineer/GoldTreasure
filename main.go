@@ -39,7 +39,7 @@ func main() {
 	go PostCashG(chTrlist, chCoin, true)
 	go PostCashG(chTrlist, chCoin, false)
 	go PostCashG(chTrlist, chCoin, false)
-	chDig := make(chan DigData, 5)
+	chDig := make(chan DigData, 50)
 	chLic := make(chan *models.License, 10)
 	chUsedLic := make(chan *int64)
 
@@ -195,19 +195,40 @@ func LicGor(chCoin chan uint32, chLic chan *models.License) {
 	}
 }
 
+/*exploreArea - исследование области*/
 func exploreArea(xbg, ybg, xend, yend int, ch chan DigData) {
 	for x := xbg; x < xend; x++ {
 		for y := ybg; y < yend; y++ {
-			amount, err := api.Explore(int64(x), int64(y))
+			amount, err := api.Explore(int64(x), int64(y), 1, 1)
 			if err != nil {
 				fmt.Println("Exp err:", err)
 			} else {
 				if *amount != 0 {
 					digData := DigData{x: int64(x), y: int64(y), amount: int64(*amount)}
+					if len(ch) > 99 {
+						fmt.Println("Chan full!")
+					}
 					ch <- digData
 
 				}
 			}
 		}
 	}
+}
+
+/*exploreSegment - исследование сегмента*/
+func exploreSegment(xbg, ybg, xend, yend, size int, ch chan DigData) {
+	for x := xbg; x < xend; x += size {
+		for y := ybg; y < yend; y += size {
+			amount, err := api.Explore(int64(x), int64(y), int64(size), int64(size))
+			if err != nil {
+				fmt.Println("Exp err:", err)
+			} else {
+				if *amount != 0 {
+					go exploreArea(x, y, x+size, y+size, ch)
+				}
+			}
+		}
+	}
+
 }

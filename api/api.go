@@ -40,13 +40,13 @@ func GetBalance() (*models.Balance, error) {
 }
 
 /*Explore - разведка точки x,y*/
-func Explore(x, y int64) (*models.Amount, error) {
+func Explore(x, y, sizeX, sizeY int64) (*models.Amount, error) {
 	req := BasicPath + "/explore"
 	area := models.Area{
 		PosX:  &x,
 		PosY:  &y,
-		SizeX: 1,
-		SizeY: 1,
+		SizeX: sizeX,
+		SizeY: sizeY,
 	}
 	bts, err := json.Marshal(area)
 	if err != nil {
@@ -220,7 +220,7 @@ func getError(rc io.ReadCloser) (*models.Error, error) {
 	}
 	error := models.Error{}
 	json.Unmarshal(bts, &error)
-	fmt.Println(*error.Message, *error.Code)
+	//fmt.Println(*error.Message, *error.Code)
 	return &error, nil
 
 }
