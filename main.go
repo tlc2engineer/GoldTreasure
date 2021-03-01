@@ -68,20 +68,22 @@ func main() {
 	go DigG(chDig, chTrlist, chLic, chUsedLic)
 
 	//------------тестируем explore-------------
-	for x := 1; x < 3500; x++ {
-		for y := 1; y < 3500; y++ {
-			amount, err := api.Explore(int64(x), int64(y))
-			if err != nil {
-				fmt.Println("Exp err:", err)
-			} else {
-				if *amount != 0 {
-					digData := DigData{x: int64(x), y: int64(y), amount: int64(*amount)}
-					chDig <- digData
+	// for x := 1; x < 3500; x++ {
+	// 	for y := 1; y < 3500; y++ {
+	// 		amount, err := api.Explore(int64(x), int64(y))
+	// 		if err != nil {
+	// 			fmt.Println("Exp err:", err)
+	// 		} else {
+	// 			if *amount != 0 {
+	// 				digData := DigData{x: int64(x), y: int64(y), amount: int64(*amount)}
+	// 				chDig <- digData
 
-				}
-			}
-		}
-	}
+	// 			}
+	// 		}
+	// 	}
+	// }
+	go exploreArea(0, 0, 3500, 1750, chDig)
+	exploreArea(0, 1750, 3500, 3500, chDig)
 
 }
 
@@ -189,6 +191,23 @@ func LicGor(chCoin chan uint32, chLic chan *models.License) {
 		} else {
 
 			chLic <- lic
+		}
+	}
+}
+
+func exploreArea(xbg, ybg, xend, yend int, ch chan DigData) {
+	for x := xbg; x < xend; x++ {
+		for y := ybg; y < yend; y++ {
+			amount, err := api.Explore(int64(x), int64(y))
+			if err != nil {
+				fmt.Println("Exp err:", err)
+			} else {
+				if *amount != 0 {
+					digData := DigData{x: int64(x), y: int64(y), amount: int64(*amount)}
+					ch <- digData
+
+				}
+			}
 		}
 	}
 }
