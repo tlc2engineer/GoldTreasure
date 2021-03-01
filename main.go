@@ -82,8 +82,8 @@ func main() {
 	// 		}
 	// 	}
 	// }
-	//go exploreSegment(0, 0, 3498, 1748, 4, chDig)
-	exploreSegment(0, 1750, 3498, 3498, 3, chDig)
+	exploreSegment(0, 0, 3498, 1748, 4, chDig)
+	//exploreSegment(0, 1750, 3498, 3498, 4, chDig)
 
 }
 
@@ -242,7 +242,7 @@ func exploreSegment(xbg, ybg, xend, yend, size int, ch chan DigData) int {
 					m1:
 						for x1 := x; x1 < x+size; x1 += size / 2 {
 							for y1 := y; y1 < y+size; y1 += size / 2 {
-								am := exploreSegment(x1, y1, x+size/2, y+size/2, size/2, ch)
+								am := exploreSegment(x1, y1, x1+size/2, y1+size/2, size/2, ch)
 								sum += am
 								tsum += am
 								if money == tsum {
@@ -250,7 +250,9 @@ func exploreSegment(xbg, ybg, xend, yend, size int, ch chan DigData) int {
 								}
 							}
 						}
-						fmt.Printf("t: %d fact: %d ", money, tsum)
+						if money != tsum {
+							fmt.Printf("t: %d fact: %d ", money, tsum)
+						}
 					} else {
 						money := int(*amount)
 						sum += exploreArea(x, y, x+size, y+size, ch, money)
