@@ -82,8 +82,10 @@ func main() {
 	// 		}
 	// 	}
 	// }
-	exploreSegment(0, 0, 3498, 1748, 4, chDig)
-	//exploreSegment(0, 1750, 3498, 3498, 4, chDig)
+	//go exploreSegment(0, 0, 3498, 1748, 4, chDig)
+
+	//go searchSegments(0, 1741, 3491, 3491, 8, 4, chDig)
+	searchSegments(0, 0, 3491, 1741, 8, 4, chDig)
 
 }
 
@@ -207,8 +209,8 @@ m1:
 			} else {
 				if *amount != 0 {
 					digData := DigData{x: int64(x), y: int64(y), amount: int64(*amount)}
-					if len(ch) > 99 {
-						fmt.Println("Chan full!")
+					if len(ch) > 48 {
+						fmt.Println("Chain full!")
 					}
 					ch <- digData
 					sum += int(*amount)
@@ -264,4 +266,59 @@ func exploreSegment(xbg, ybg, xend, yend, size int, ch chan DigData) int {
 	}
 	return sum
 
+}
+
+func divideSegment(x, y, size int64, ch chan DigData) int {
+	sum := 0
+	amount, err := api.Explore(x, y, size, size)
+	if err != nil {
+		fmt.Println("Exp err:", err)
+		return 0
+	}
+
+	if *amount != 0 {
+		if size >= 4 {
+			money := int(*amount)
+			tsum := 0
+		m1:
+			for x1 := x; x1 < x+size; x1 += size / 2 {
+				for y1 := y; y1 < y+size; y1 += size / 2 {
+					am := divideSegment(x1, y1, size/2, ch)
+					sum += am
+					tsum += am
+					if money == tsum {
+						break m1
+					}
+				}
+			}
+			if money != tsum {
+				fmt.Printf("------t: %d fact: %d ", money, tsum)
+			}
+		} else {
+			money := int(*amount)
+			sum += exploreArea(int(x), int(y), int(x+size), int(y+size), ch, money)
+		}
+
+	}
+	return sum
+}
+
+func searchSegments(x0, y0, xe, ye, size, limit int, ch chan DigData) {
+	for x := x0; x < xe; x += size {
+		for y := y0; y < ye; y += size {
+			amount, err := api.Explore(int64(x), int64(y), int64(size), int64(size))
+			if err != nil {
+				fmt.Println("Exp err:", err)
+				return
+			}
+			if int(*amount) >= limit {
+				go func(x1, y1, size1, amount1 int, ch chan DigData) {
+					fact := divideSegment(int64(x1), int64(y1), int64(size1), ch)
+					if fact != amount1 {
+						fmt.Printf("search t: %d fact: %d ", amount, fact)
+					}
+				}(x, y, size, int(*amount), ch)
+			}
+		}
+	}
 }
