@@ -82,6 +82,10 @@ func main() {
 	// 		}
 	// 	}
 	// }
+	research(0, 160, 8)
+	research(0, 200, 10)
+	research(0, 16*16, 16)
+	research(0, 20*20, 20)
 	exploreSegment(0, 0, 3498, 1748, 4, chDig)
 	//exploreSegment(0, 1750, 3498, 3498, 4, chDig)
 
@@ -264,4 +268,17 @@ func exploreSegment(xbg, ybg, xend, yend, size int, ch chan DigData) int {
 	}
 	return sum
 
+}
+
+func research(start, end, step int) {
+	for x := start; x < end; x += step {
+		tbg := time.Now()
+		for y := start; y < end; y += step {
+			amount, err := api.Explore(int64(x), int64(y), int64(step), int64(step))
+			if err == nil {
+				fmt.Printf("%2d ", *amount)
+			}
+		}
+		fmt.Printf(" ms%d\n", int(time.Since(tbg).Milliseconds())/((end-start)/step))
+	}
 }
