@@ -34,14 +34,16 @@ func main() {
 	}
 	// базовый путь
 	api.GetBasicPath()
-	chTrlist := make(chan models.TreasureList, 5)
+	chTrlist := make(chan models.TreasureList, 100)
 	chCoin := make(chan uint32, 100)
 	go PostCashG(chTrlist, chCoin, true)
 	go PostCashG(chTrlist, chCoin, false)
 	go PostCashG(chTrlist, chCoin, false)
+	// go PostCashG(chTrlist, chCoin, false)
+	// go PostCashG(chTrlist, chCoin, false)
 	chDig := make(chan DigData, 50)
 	chLic := make(chan *models.License, 10)
-	chUsedLic := make(chan *int64)
+	chUsedLic := make(chan *int64, 10)
 
 	go func() {
 		for l := range chUsedLic {
@@ -55,17 +57,17 @@ func main() {
 	}()
 	go LicGor(chCoin, chLic)
 	go LicGor(chCoin, chLic)
-	go LicGor(chCoin, chLic)
+	//go LicGor(chCoin, chLic)
 	go DigG(chDig, chTrlist, chLic, chUsedLic)
 	go DigG(chDig, chTrlist, chLic, chUsedLic)
 	go DigG(chDig, chTrlist, chLic, chUsedLic)
 	go DigG(chDig, chTrlist, chLic, chUsedLic)
 	go DigG(chDig, chTrlist, chLic, chUsedLic)
-	go DigG(chDig, chTrlist, chLic, chUsedLic)
-	go DigG(chDig, chTrlist, chLic, chUsedLic)
-	go DigG(chDig, chTrlist, chLic, chUsedLic)
-	go DigG(chDig, chTrlist, chLic, chUsedLic)
-	go DigG(chDig, chTrlist, chLic, chUsedLic)
+	// go DigG(chDig, chTrlist, chLic, chUsedLic)
+	// go DigG(chDig, chTrlist, chLic, chUsedLic)
+	// go DigG(chDig, chTrlist, chLic, chUsedLic)
+	// go DigG(chDig, chTrlist, chLic, chUsedLic)
+	// go DigG(chDig, chTrlist, chLic, chUsedLic)
 
 	//------------тестируем explore-------------
 	// for x := 1; x < 3500; x++ {
@@ -82,11 +84,8 @@ func main() {
 	// 		}
 	// 	}
 	// }
-	research(0, 160, 8)
-	research(0, 200, 10)
-	research(0, 16*16, 16)
-	research(0, 20*20, 20)
-	exploreSegment(0, 0, 3498, 1748, 4, chDig)
+	searchSegments(0, 0, 3491, 1741, 8, 4, chDig)
+
 	//exploreSegment(0, 1750, 3498, 3498, 4, chDig)
 
 }
@@ -154,6 +153,9 @@ func DigG(ch chan DigData, cht chan models.TreasureList, chLic chan *models.Lice
 				if tlist != nil {
 					trCount--
 					cht <- tlist
+					if len(cht) > 99 {
+						fmt.Println("cht chain is full")
+					}
 				}
 			}
 		}
@@ -211,8 +213,8 @@ m1:
 			} else {
 				if *amount != 0 {
 					digData := DigData{x: int64(x), y: int64(y), amount: int64(*amount)}
-					if len(ch) > 99 {
-						fmt.Println("Chan full!")
+					if len(ch) > 48 {
+						//fmt.Println("Chain full!")
 					}
 					ch <- digData
 					sum += int(*amount)
@@ -280,5 +282,60 @@ func research(start, end, step int) {
 			}
 		}
 		fmt.Printf(" ms%d\n", int(time.Since(tbg).Milliseconds())/((end-start)/step))
+	}
+}
+
+func divideSegment(x, y, size int64, ch chan DigData) int {
+	sum := 0
+	amount, err := api.Explore(x, y, size, size)
+	if err != nil {
+		fmt.Println("Exp err:", err)
+		return 0
+	}
+
+	if *amount != 0 {
+		if size >= 4 {
+			money := int(*amount)
+			tsum := 0
+		m1:
+			for x1 := x; x1 < x+size; x1 += size / 2 {
+				for y1 := y; y1 < y+size; y1 += size / 2 {
+					am := divideSegment(x1, y1, size/2, ch)
+					sum += am
+					tsum += am
+					if money == tsum {
+						break m1
+					}
+				}
+			}
+			if money != tsum {
+				fmt.Printf("------t: %d fact: %d ", money, tsum)
+			}
+		} else {
+			money := int(*amount)
+			sum += exploreArea(int(x), int(y), int(x+size), int(y+size), ch, money)
+		}
+
+	}
+	return sum
+}
+
+func searchSegments(x0, y0, xe, ye, size, limit int, ch chan DigData) {
+	for x := x0; x < xe; x += size {
+		for y := y0; y < ye; y += size {
+			amount, err := api.Explore(int64(x), int64(y), int64(size), int64(size))
+			if err != nil {
+				fmt.Println("Exp err:", err)
+				return
+			}
+			if int(*amount) >= limit {
+				go func(x1, y1, size1, amount1 int, ch chan DigData) {
+					fact := divideSegment(int64(x1), int64(y1), int64(size1), ch)
+					if fact != amount1 {
+						fmt.Printf("search t: %d fact: %d ", amount, fact)
+					}
+				}(x, y, size, int(*amount), ch)
+			}
+		}
 	}
 }
