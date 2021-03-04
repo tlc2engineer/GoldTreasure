@@ -5,6 +5,16 @@ import (
 	"time"
 )
 
+/*ErrType - тип ошибки*/
+type ErrType int
+
+const (
+	Exp ErrType = iota //exp
+	Digg
+	Cash
+	Lic
+)
+
 /*StatChan - канал статистики*/
 var statChan chan Stat = make(chan Stat)
 
@@ -46,49 +56,20 @@ func StatGor() {
 			case ErrStat:
 				es := statEnt.(ErrStat)
 				errors++
-				switch es.ErrName() {
-				case "Exp":
+				switch es.Type() {
+				case Exp:
 					exErrors++
-				case "Dig":
+				case Digg:
 					digErrors++
-				case "Cash":
+				case Cash:
 					cashErrors++
-				case "Lic":
+				case Lic:
 					licErrors++
 				}
 			}
 		}
 	}()
-	// go func() {
-	// 	for dig := range digChan {
-	// 		digged += dig
-	// 	}
-	// }()
-	// go func() {
-	// 	for digAmount := range digAmountChan {
-	// 		diggedAmounts += digAmount
-	// 	}
-	// }()
-	// go func() {
-	// 	for coins := range coinChan {
-	// 		coinSum += coins
-	// 	}
-	// }()
-	// go func() {
-	// 	for lic := range licStatChan {
-	// 		if lic {
-	// 			freeLicNum++
-	// 		} else {
-	// 			payLicNum++
-	// 		}
-	// 	}
-	// }()
-	// go func() {
-	// 	for area := range areaStatChan {
-	// 		areas++
-	// 		amounts += area.Amount
-	// 	}
-	// }()
+
 	for {
 		select {
 		case <-time.Tick(time.Minute):
@@ -137,5 +118,5 @@ type CoinStat interface {
 /*ErrStat - статистика ошибок*/
 type ErrStat interface {
 	Stat
-	ErrName() string
+	Type() ErrType
 }
