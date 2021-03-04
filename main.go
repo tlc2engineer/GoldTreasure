@@ -85,7 +85,8 @@ func main() {
 	//go exploreSegment(0, 0, 3498, 1748, 4, chDig)
 
 	//go searchSegments(0, 1741, 3491, 3491, 8, 4, chDig)
-	searchSegments(0, 0, 3491, 1741, 8, 4, chDig)
+	//searchSegments(0, 0, 3491, 1741, 8, 4, chDig)
+	exploreSegment(0, 0, 3498, 1748, 4, chDig)
 
 }
 
