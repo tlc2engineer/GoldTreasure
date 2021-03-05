@@ -116,6 +116,7 @@ func PostCashG(ch chan models.TreasureList, chCoins chan uint32, toLic bool) {
 				stat.NewStatErr(stat.Cash)
 				fmt.Println("Post cash err", err)
 			} else {
+				stat.NewSendTlist()
 				stat.NewCoinStat(len(*w))
 				if w != nil && toLic {
 					for _, coin := range *w {
@@ -149,12 +150,14 @@ func DigG(ch chan DigData, cht chan models.TreasureList, chLic chan *models.Lice
 			tlist, err := api.DigPost(int64(depth), *license.ID, ddata.x, ddata.y)
 			if err != nil {
 				stat.NewStatErr(stat.Digg)
-				fmt.Println("Dig err", err)
+				//fmt.Println("Dig err", err)
 			} else {
 				*license.DigUsed++
 				depth++
 				if tlist != nil {
 					trCount--
+					stat.NewSendTreas(len(tlist))
+					stat.NewDigTlist()
 					cht <- tlist
 					// if len(cht) > 99 {
 					// 	fmt.Println("cht chain is full")
@@ -217,7 +220,7 @@ m1:
 			amount, err := api.Explore(int64(x), int64(y), 1, 1)
 			if err != nil {
 				stat.NewStatErr(stat.Exp)
-				fmt.Println("Exp err:", err)
+				//fmt.Println("Exp err:", err)
 			} else {
 				if *amount != 0 {
 					digData := DigData{x: int64(x), y: int64(y), amount: int64(*amount)}
@@ -248,7 +251,8 @@ func exploreSegment(xbg, ybg, xend, yend, size int, ch chan DigData) int {
 		for y := ybg; y < yend; y += size {
 			amount, err := api.Explore(int64(x), int64(y), int64(size), int64(size))
 			if err != nil {
-				fmt.Println("Exp err:", err)
+				stat.NewStatErr(stat.Exp)
+				//fmt.Println("Exp err:", err)
 			} else {
 				if *amount != 0 {
 					if size >= 4 {
@@ -298,7 +302,8 @@ func divideSegment(x, y, size int64, ch chan DigData) int {
 	sum := 0
 	amount, err := api.Explore(x, y, size, size)
 	if err != nil {
-		fmt.Println("Exp err:", err)
+		//fmt.Println("Exp err:", err)
+		stat.NewStatErr(stat.Exp)
 		return 0
 	}
 
@@ -334,7 +339,8 @@ func searchSegments(x0, y0, xe, ye, size, limit int, ch chan DigData) {
 		for y := y0; y < ye; y += size {
 			amount, err := api.Explore(int64(x), int64(y), int64(size), int64(size))
 			if err != nil {
-				fmt.Println("Exp err:", err)
+				//fmt.Println("Exp err:", err)
+				stat.NewStatErr(stat.Exp)
 				return
 			}
 			if int(*amount) >= limit {

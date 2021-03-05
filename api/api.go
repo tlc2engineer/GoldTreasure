@@ -9,6 +9,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+
+	"github.com/valyala/fasthttp"
 )
 
 /*BasicPath - базовый путь*/
@@ -41,7 +43,14 @@ func GetBalance() (*models.Balance, error) {
 
 /*Explore - разведка точки x,y*/
 func Explore(x, y, sizeX, sizeY int64) (*models.Amount, error) {
-	req := BasicPath + "/explore"
+	req := fasthttp.AcquireRequest()
+	resp := fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseRequest(req)   // <- do not forget to release
+	defer fasthttp.ReleaseResponse(resp) // <- do not forget to release
+	url := BasicPath + "/explore"
+	req.SetRequestURI(url)
+	req.Header.SetMethod("POST")
+	req.Header.Set("Content-Type", "application/json")
 	area := models.Area{
 		PosX:  &x,
 		PosY:  &y,
@@ -52,25 +61,21 @@ func Explore(x, y, sizeX, sizeY int64) (*models.Amount, error) {
 	if err != nil {
 		return nil, err
 	}
-	responseBody := bytes.NewBuffer(bts)
-	resp, err := http.Post(req, "application/json", responseBody)
+	req.SetBody(bts)
+	err = fasthttp.Do(req, resp)
 	if err != nil {
 		return nil, err
 	}
-	if resp.StatusCode == http.StatusOK {
-		bts, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return nil, err
-		}
+	if resp.StatusCode() == http.StatusOK {
 		report := models.Report{}
-		err = json.Unmarshal(bts, &report)
+		err = json.Unmarshal(resp.Body(), &report)
 		if err != nil {
 			return nil, err
 		}
 		return report.Amount, nil
 
 	}
-	me, err := getError(resp.Body)
+	me, err := getBtsError(resp.Body())
 	if err != nil {
 		return nil, err
 	}
@@ -218,6 +223,15 @@ func getError(rc io.ReadCloser) (*models.Error, error) {
 	if err != nil {
 		return nil, err
 	}
+	error := models.Error{}
+	json.Unmarshal(bts, &error)
+	//fmt.Println(*error.Message, *error.Code)
+	return &error, nil
+
+}
+
+func getBtsError(bts []byte) (*models.Error, error) {
+
 	error := models.Error{}
 	json.Unmarshal(bts, &error)
 	//fmt.Println(*error.Message, *error.Code)

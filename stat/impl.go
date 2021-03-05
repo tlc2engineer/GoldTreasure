@@ -1,5 +1,7 @@
 package stat
 
+var digTreasures, digTlist, sendTlist int
+
 type areaStat struct {
 	amounts int
 }
@@ -87,4 +89,19 @@ func (err error) Type() ErrType {
 /*NewStatErr - новая ошибка*/
 func NewStatErr(_type ErrType) {
 	statChan <- error{_type: _type}
+}
+
+/*NewSendTreas - новые откопанные сокровища*/
+func NewSendTreas(treasures int) {
+	digTreasures += treasures
+}
+
+/*NewDigTlist - новый откопанный список сокровищ*/
+func NewDigTlist() {
+	digTlist++
+}
+
+/*NewSendTlist - новый отосланный список сокровищ*/
+func NewSendTlist() {
+	sendTlist++
 }
