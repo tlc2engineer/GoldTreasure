@@ -15,11 +15,6 @@ import (
 var numLic int = 0
 var mu = new(sync.Mutex)
 
-var areaStatChan = make(chan stat.Area)
-var digStatChan = make(chan int)
-var digAmountStatChan = make(chan int)
-var coinStatChan = make(chan int)
-
 func main() {
 
 	address := os.Getenv("ADDRESS")
@@ -41,17 +36,20 @@ func main() {
 	// базовый путь
 	api.GetBasicPath()
 	//------------stat-------------
-	licStatChan := make(chan bool)
-	go stat.StatGor(licStatChan, areaStatChan, digStatChan, digAmountStatChan, coinStatChan)
+
+	go stat.StatGor()
 	//-----------------------------
-	chTrlist := make(chan models.TreasureList, 5)
+	chTrlist := make(chan models.TreasureList, 2000)
 	chCoin := make(chan uint32, 100)
 	go PostCashG(chTrlist, chCoin, true)
 	go PostCashG(chTrlist, chCoin, false)
 	go PostCashG(chTrlist, chCoin, false)
+	go PostCashG(chTrlist, chCoin, false)
+	go PostCashG(chTrlist, chCoin, false)
+	go PostCashG(chTrlist, chCoin, false)
 	chDig := make(chan DigData, 100)
 	chLic := make(chan *models.License, 10)
-	chUsedLic := make(chan *int64)
+	chUsedLic := make(chan *int64, 10)
 
 	go func() {
 		for l := range chUsedLic {
@@ -63,9 +61,9 @@ func main() {
 
 		}
 	}()
-	go LicGor(chCoin, chLic, licStatChan)
-	go LicGor(chCoin, chLic, licStatChan)
-	go LicGor(chCoin, chLic, licStatChan)
+	go LicGor(chCoin, chLic)
+	go LicGor(chCoin, chLic)
+	go LicGor(chCoin, chLic)
 	go DigG(chDig, chTrlist, chLic, chUsedLic)
 	go DigG(chDig, chTrlist, chLic, chUsedLic)
 	go DigG(chDig, chTrlist, chLic, chUsedLic)
@@ -76,12 +74,19 @@ func main() {
 	go DigG(chDig, chTrlist, chLic, chUsedLic)
 	go DigG(chDig, chTrlist, chLic, chUsedLic)
 	go DigG(chDig, chTrlist, chLic, chUsedLic)
+	// go DigG(chDig, chTrlist, chLic, chUsedLic)
+	// go DigG(chDig, chTrlist, chLic, chUsedLic)
+	// go DigG(chDig, chTrlist, chLic, chUsedLic)
+	// go DigG(chDig, chTrlist, chLic, chUsedLic)
+	// go DigG(chDig, chTrlist, chLic, chUsedLic)
 
 	//go exploreSegment(0, 0, 3498, 1748, 4, chDig)
 
 	//go searchSegments(0, 1741, 3491, 3491, 8, 4, chDig)
 	searchSegments(0, 0, 3491, 1741, 8, 4, chDig)
 	//exploreSegment(0, 0, 3498, 1748, 4, chDig)
+
+	//exploreSegment(0, 1750, 3498, 3498, 4, chDig)
 
 }
 
@@ -104,12 +109,14 @@ func PostCashG(ch chan models.TreasureList, chCoins chan uint32, toLic bool) {
 		for _, treasure := range tlist {
 			w, err := api.PostCash(treasure)
 			for err != nil && err.Error() == "Status not ok:503" {
+				stat.NewStatErr(stat.Cash)
 				w, err = api.PostCash(treasure)
 			}
 			if err != nil {
+				stat.NewStatErr(stat.Cash)
 				fmt.Println("Post cash err", err)
 			} else {
-				coinStatChan <- len(*w)
+				stat.NewCoinStat(len(*w))
 				if w != nil && toLic {
 					for _, coin := range *w {
 						chCoins <- coin
@@ -141,6 +148,7 @@ func DigG(ch chan DigData, cht chan models.TreasureList, chLic chan *models.Lice
 			}
 			tlist, err := api.DigPost(int64(depth), *license.ID, ddata.x, ddata.y)
 			if err != nil {
+				stat.NewStatErr(stat.Digg)
 				fmt.Println("Dig err", err)
 			} else {
 				*license.DigUsed++
@@ -148,17 +156,19 @@ func DigG(ch chan DigData, cht chan models.TreasureList, chLic chan *models.Lice
 				if tlist != nil {
 					trCount--
 					cht <- tlist
+					// if len(cht) > 99 {
+					// 	fmt.Println("cht chain is full")
+					// }
 				}
 			}
 		}
-		digStatChan <- depth
-		digAmountStatChan <- (int(ddata.amount) - int(trCount))
+		stat.NewDsStat(depth, (int(ddata.amount) - int(trCount)))
 
 	}
 }
 
 /*LicGor - лицензии*/
-func LicGor(chCoin chan uint32, chLic chan *models.License, statChan chan bool) {
+func LicGor(chCoin chan uint32, chLic chan *models.License) {
 	var coin uint32
 	var wallet models.Wallet
 
@@ -187,11 +197,12 @@ func LicGor(chCoin chan uint32, chLic chan *models.License, statChan chan bool) 
 		}
 		lic, err := api.PostLicense(wallet)
 		if err != nil {
+			stat.NewStatErr(stat.Lic)
 			mu.Lock()
 			numLic--
 			mu.Unlock()
 		} else {
-			statChan <- free
+			stat.NewLcStat(free)
 			chLic <- lic
 		}
 	}
@@ -205,6 +216,7 @@ m1:
 		for y := ybg; y < yend; y++ {
 			amount, err := api.Explore(int64(x), int64(y), 1, 1)
 			if err != nil {
+				stat.NewStatErr(stat.Exp)
 				fmt.Println("Exp err:", err)
 			} else {
 				if *amount != 0 {
@@ -212,7 +224,7 @@ m1:
 					// if len(ch) > 98 {
 					// 	fmt.Println("Chain full!")
 					// }
-					areaStatChan <- stat.Area{Amount: int(*amount)}
+					stat.NewArStat(int(*amount))
 					ch <- digData
 					sum += int(*amount)
 					if targetMoney == sum {
@@ -269,6 +281,19 @@ func exploreSegment(xbg, ybg, xend, yend, size int, ch chan DigData) int {
 
 }
 
+func research(start, end, step int) {
+	for x := start; x < end; x += step {
+		tbg := time.Now()
+		for y := start; y < end; y += step {
+			amount, err := api.Explore(int64(x), int64(y), int64(step), int64(step))
+			if err == nil {
+				fmt.Printf("%2d ", *amount)
+			}
+		}
+		fmt.Printf(" ms%d\n", int(time.Since(tbg).Milliseconds())/((end-start)/step))
+	}
+}
+
 func divideSegment(x, y, size int64, ch chan DigData) int {
 	sum := 0
 	amount, err := api.Explore(x, y, size, size)
@@ -313,12 +338,9 @@ func searchSegments(x0, y0, xe, ye, size, limit int, ch chan DigData) {
 				return
 			}
 			if int(*amount) >= limit {
-				go func(x1, y1, size1, amount1 int, ch chan DigData) {
-					fact := divideSegment(int64(x1), int64(y1), int64(size1), ch)
-					if fact != amount1 {
-						fmt.Printf("search t: %d fact: %d ", amount, fact)
-					}
-				}(x, y, size, int(*amount), ch)
+
+				go divideSegment(int64(x), int64(y), int64(size), ch)
+
 			}
 		}
 	}
