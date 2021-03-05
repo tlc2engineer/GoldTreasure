@@ -43,6 +43,7 @@ func GetBalance() (*models.Balance, error) {
 
 /*Explore - разведка точки x,y*/
 func Explore(x, y, sizeX, sizeY int64) (*models.Amount, error) {
+
 	req := fasthttp.AcquireRequest()
 	resp := fasthttp.AcquireResponse()
 	defer fasthttp.ReleaseRequest(req)   // <- do not forget to release
@@ -57,6 +58,7 @@ func Explore(x, y, sizeX, sizeY int64) (*models.Amount, error) {
 		SizeX: sizeX,
 		SizeY: sizeY,
 	}
+
 	bts, err := json.Marshal(area)
 	if err != nil {
 		return nil, err
@@ -151,34 +153,37 @@ func DigPost(depth int64, licID int64, posX int64, posY int64) (models.TreasureL
 
 /*PostCash - посылка cash*/
 func PostCash(treasure models.Treasure) (*models.Wallet, error) {
-	req := BasicPath + "/cash"
-
+	url := BasicPath + "/cash"
+	req := fasthttp.AcquireRequest()
+	resp := fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseRequest(req)
+	defer fasthttp.ReleaseResponse(resp)
+	req.SetRequestURI(url)
+	req.Header.SetMethod("POST")
+	req.Header.Set("Content-Type", "application/json")
 	bts, err := json.Marshal(treasure)
 	if err != nil {
 		return nil, err
 	}
-	buff := bytes.NewBuffer(bts)
-	resp, err := http.Post(req, "application/json", buff)
+	req.SetBody(bts)
+	err = fasthttp.Do(req, resp)
 	if err != nil {
 		return nil, err
 	}
-	if resp.StatusCode == http.StatusOK {
-		bts, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return nil, err
-		}
+	if resp.StatusCode() == http.StatusOK {
 		wallet := models.Wallet{}
-		err = json.Unmarshal(bts, &wallet)
+		err = json.Unmarshal(resp.Body(), &wallet)
 		if err != nil {
 			return nil, err
 		}
 		return &wallet, nil
 	}
-	_, err = getError(resp.Body)
+
+	_, err = getBtsError(resp.Body())
 	if err != nil {
 		return nil, err
 	}
-	return nil, fmt.Errorf("Status not ok:%d", resp.StatusCode)
+	return nil, fmt.Errorf("Status not ok:%d", resp.StatusCode())
 }
 
 /*GetLicenses - получение списка лицензий*/

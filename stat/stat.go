@@ -2,6 +2,7 @@ package stat
 
 import (
 	"fmt"
+	"runtime"
 	"time"
 )
 
@@ -76,6 +77,14 @@ func StatGor() {
 			fmt.Printf("LicFree: %d, LicPay: %d Areas: %d Amounts: %d Digged: %d DiggedAmounts: %d Coins: %d\n", freeLicNum, payLicNum, areas, amounts, digged, diggedAmounts, coinSum)
 			fmt.Printf("Errors: %d, ExpErr: %d DigErr: %d CashErr: %d LicErr: %d \n", errors, exErrors, digErrors, cashErrors, licErrors)
 			fmt.Printf("DigTreas: %d,DigTlist: %d SendTlist: %d\n", digTreasures, digTlist, sendTlist)
+		case <-time.After(time.Minute * 3):
+			var m runtime.MemStats
+			runtime.ReadMemStats(&m)
+			// For info on each, see: https://golang.org/pkg/runtime/#MemStats
+			fmt.Printf("Alloc = %v MiB", bToMb(m.Alloc))
+			fmt.Printf("\tTotalAlloc = %v MiB", bToMb(m.TotalAlloc))
+			fmt.Printf("\tSys = %v MiB", bToMb(m.Sys))
+			fmt.Printf("\tNumGC = %v\n", m.NumGC)
 		}
 	}
 
@@ -120,4 +129,8 @@ type CoinStat interface {
 type ErrStat interface {
 	Stat
 	Type() ErrType
+}
+
+func bToMb(b uint64) uint64 {
+	return b / 1024 / 1024
 }
