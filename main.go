@@ -51,6 +51,7 @@ func main() {
 	go PostCashG(chTrlist, chCoin, false)
 	go PostCashG(chTrlist, chCoin, false)
 	go PostCashG(chTrlist, chCoin, false)
+	go PostCashG(chTrlist, chCoin, false)
 	chDig := make(chan DigData, 100)
 	chLic := make(chan *models.License, 10)
 	chUsedLic := make(chan *int64, 10)
@@ -97,8 +98,8 @@ func main() {
 		}
 	}()
 
-	go searchSegments(0, 1841, 3491, 3491, 8, 4, chDig)
-	searchSegments(0, 0, 3491, 1741, 8, 4, chDig)
+	go searchSegments(0, 1841, 3491, 3491, 8, 3, chDig)
+	searchSegments(0, 0, 3491, 1741, 8, 3, chDig)
 	//exploreSegment(0, 0, 3498, 1748, 4, chDig)
 
 	//exploreSegment(0, 1750, 3498, 3498, 4, chDig)
