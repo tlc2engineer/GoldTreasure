@@ -76,7 +76,7 @@ func StatGor() {
 		case <-time.Tick(time.Minute):
 			fmt.Printf("LicFree: %d, LicPay: %d Areas: %d Amounts: %d Digged: %d DiggedAmounts: %d Coins: %d\n", freeLicNum, payLicNum, areas, amounts, digged, diggedAmounts, coinSum)
 			fmt.Printf("Errors: %d, ExpErr: %d DigErr: %d CashErr: %d LicErr: %d \n", errors, exErrors, digErrors, cashErrors, licErrors)
-			fmt.Printf("DigTreas: %d,DigTlist: %d SendTlist: %d\n", digTreasures, digTlist, sendTlist)
+			fmt.Printf("DigTreas: %d,DigTlist: %d SendTlist: %d ExpAreaErr: %d\n", digTreasures, digTlist, sendTlist, expAreaErr)
 		case <-time.After(time.Minute * 3):
 			var m runtime.MemStats
 			runtime.ReadMemStats(&m)

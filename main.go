@@ -15,6 +15,8 @@ import (
 var numLic int = 0
 var mu = new(sync.Mutex)
 
+var expChainFull bool
+
 func main() {
 
 	address := os.Getenv("ADDRESS")
@@ -39,9 +41,11 @@ func main() {
 
 	go stat.StatGor()
 	//-----------------------------
-	chTrlist := make(chan models.TreasureList, 2000)
+	chTrlist := make(chan models.TreasureList, 20)
 	chCoin := make(chan uint32, 100)
 	go PostCashG(chTrlist, chCoin, true)
+	go PostCashG(chTrlist, chCoin, false)
+	go PostCashG(chTrlist, chCoin, false)
 	go PostCashG(chTrlist, chCoin, false)
 	go PostCashG(chTrlist, chCoin, false)
 	go PostCashG(chTrlist, chCoin, false)
@@ -81,8 +85,19 @@ func main() {
 	// go DigG(chDig, chTrlist, chLic, chUsedLic)
 
 	//go exploreSegment(0, 0, 3498, 1748, 4, chDig)
+	go func() {
+		for {
+			select {
+			case <-time.Tick(time.Millisecond * 500):
+				if expChainFull != (len(chDig) > 98) {
+					expChainFull = len(chDig) > 98
+					time.Sleep(time.Second * 2)
+				}
+			}
+		}
+	}()
 
-	//go searchSegments(0, 1741, 3491, 3491, 8, 4, chDig)
+	go searchSegments(0, 1841, 3491, 3491, 8, 4, chDig)
 	searchSegments(0, 0, 3491, 1741, 8, 4, chDig)
 	//exploreSegment(0, 0, 3498, 1748, 4, chDig)
 
@@ -224,9 +239,7 @@ m1:
 			} else {
 				if *amount != 0 {
 					digData := DigData{x: int64(x), y: int64(y), amount: int64(*amount)}
-					// if len(ch) > 98 {
-					// 	fmt.Println("Chain full!")
-					// }
+
 					stat.NewArStat(int(*amount))
 					ch <- digData
 					sum += int(*amount)
@@ -239,7 +252,8 @@ m1:
 		}
 	}
 	if sum != targetMoney {
-		fmt.Printf("Exp error t:%d s:%d\n", targetMoney, sum)
+		stat.NewExpAreaErr()
+		//fmt.Printf("Exp error t:%d s:%d\n", targetMoney, sum)
 	}
 	return targetMoney
 }
@@ -344,8 +358,11 @@ func searchSegments(x0, y0, xe, ye, size, limit int, ch chan DigData) {
 				return
 			}
 			if int(*amount) >= limit {
-
-				go divideSegment(int64(x), int64(y), int64(size), ch)
+				if !expChainFull {
+					go divideSegment(int64(x), int64(y), int64(size), ch)
+				} else {
+					divideSegment(int64(x), int64(y), int64(size), ch)
+				}
 
 			}
 		}

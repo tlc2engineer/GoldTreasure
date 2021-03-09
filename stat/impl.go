@@ -1,6 +1,7 @@
 package stat
 
 var digTreasures, digTlist, sendTlist int
+var expAreaErr int
 
 type areaStat struct {
 	amounts int
@@ -104,4 +105,9 @@ func NewDigTlist() {
 /*NewSendTlist - новый отосланный список сокровищ*/
 func NewSendTlist() {
 	sendTlist++
+}
+
+/*NewExpAreaErr - непонятная ошибка с подсчетом в функции exploreArea*/
+func NewExpAreaErr() {
+	expAreaErr++
 }
