@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"sync"
 
 	"github.com/valyala/fasthttp"
 )
@@ -16,13 +17,37 @@ import (
 /*BasicPath - базовый путь*/
 var BasicPath string
 
+var areaPool = sync.Pool{
+	New: func() interface{} {
+		return new(models.Area)
+	},
+}
+
+var reportPool = sync.Pool{
+	New: func() interface{} { return new(models.Report) },
+}
+
+var bbufPool = sync.Pool{
+	New: func() interface{} {
+		bts := make([]byte, 100)
+		return bytes.NewBuffer(bts)
+	},
+}
+
 /*GetBalance - получение баланса*/
 func GetBalance() (*models.Balance, error) {
-	req := fmt.Sprintf("%s/balance", BasicPath)
-	resp, err := http.Get(req)
+	req := fasthttp.AcquireRequest()
+	resp := fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseRequest(req)
+	defer fasthttp.ReleaseResponse(resp)
+	url := fmt.Sprintf("%s/balance", BasicPath)
+	req.SetRequestURI(url)
+	req.Header.SetMethod("GET")
+	req.Header.Set("Content-Type", "application/json")
+	err := fasthttp.Do(req, resp)
 	if err == nil {
-		if resp.StatusCode == http.StatusOK {
-			bytes, err := ioutil.ReadAll(resp.Body)
+		if resp.StatusCode() == http.StatusOK {
+			bytes := resp.Body()
 			if err != nil {
 				return nil, err
 			}
@@ -33,7 +58,7 @@ func GetBalance() (*models.Balance, error) {
 			}
 			return &balance, nil
 		}
-		_, err = getError(resp.Body)
+		_, err = getBtsError(resp.Body())
 		if err != nil {
 			return nil, err
 		}
@@ -46,31 +71,51 @@ func Explore(x, y, sizeX, sizeY int64) (*models.Amount, error) {
 
 	req := fasthttp.AcquireRequest()
 	resp := fasthttp.AcquireResponse()
-	defer fasthttp.ReleaseRequest(req)   // <- do not forget to release
-	defer fasthttp.ReleaseResponse(resp) // <- do not forget to release
+	defer fasthttp.ReleaseRequest(req)
+
+	defer fasthttp.ReleaseResponse(resp)
 	url := BasicPath + "/explore"
 	req.SetRequestURI(url)
 	req.Header.SetMethod("POST")
 	req.Header.Set("Content-Type", "application/json")
-	area := models.Area{
-		PosX:  &x,
-		PosY:  &y,
-		SizeX: sizeX,
-		SizeY: sizeY,
-	}
 
-	bts, err := json.Marshal(area)
+	// area := areaPool.Get().(*models.Area)
+	// defer areaPool.Put(area)
+	// area.PosX = &x
+	// area.PosY = &y
+	// area.SizeX = sizeX
+	// area.SizeY = sizeY
+
+	buff := bbufPool.Get().(*bytes.Buffer)
+	defer bbufPool.Put(buff)
+	buff.Reset()
+	n, err := fmt.Fprintf(buff, `{"posX":%d,"posY":%d,"sizeX":%d,"sizeY":%d}`, x, y, sizeX, sizeY)
 	if err != nil {
 		return nil, err
 	}
-	req.SetBody(bts)
+	// area := models.Area{
+	// 	PosX:  &x,
+	// 	PosY:  &y,
+	// 	SizeX: sizeX,
+	// 	SizeY: sizeY,
+	// }
+	// bts, err := area.MarshalJSON()
+	// //bts, err := json.Marshal(*area)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	req.SetBody(buff.Bytes()[:n])
 	err = fasthttp.Do(req, resp)
 	if err != nil {
 		return nil, err
 	}
 	if resp.StatusCode() == http.StatusOK {
-		report := models.Report{}
-		err = json.Unmarshal(resp.Body(), &report)
+		//report := models.Report{}
+
+		report := reportPool.Get().(*models.Report)
+		defer reportPool.Put(report)
+		err = report.UnmarshalJSON(resp.Body())
+		//err = json.Unmarshal(resp.Body(), report)
 		if err != nil {
 			return nil, err
 		}
@@ -87,18 +132,29 @@ func Explore(x, y, sizeX, sizeY int64) (*models.Amount, error) {
 
 /*PostLicense - запрос лицензии*/
 func PostLicense(wallet models.Wallet) (*models.License, error) {
-	req := BasicPath + "/licenses"
+	req := fasthttp.AcquireRequest()
+	resp := fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseRequest(req)
+
+	defer fasthttp.ReleaseResponse(resp)
+	url := BasicPath + "/licenses"
+	req.SetRequestURI(url)
+	req.Header.SetMethod("POST")
+	req.Header.Set("Content-Type", "application/json")
+
 	bts, err := json.Marshal(wallet)
 	if err != nil {
 		return nil, err
 	}
-	reqBody := bytes.NewBuffer(bts)
-	resp, err := http.Post(req, "application/json", reqBody)
+
+	req.SetBody(bts)
+	err = fasthttp.Do(req, resp)
+
 	if err != nil {
 		return nil, err
 	}
-	if resp.StatusCode == http.StatusOK {
-		bts, err := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode() == http.StatusOK {
+		bts := resp.Body()
 		if err != nil {
 			return nil, err
 		}
@@ -106,30 +162,37 @@ func PostLicense(wallet models.Wallet) (*models.License, error) {
 		json.Unmarshal(bts, &license)
 		return &license, err
 	}
-	if resp.StatusCode != 502 {
-		_, err = getError(resp.Body)
+	if resp.StatusCode() != 502 {
+		_, err = getBtsError(resp.Body())
 		if err != nil {
 			return nil, err
 		}
 	}
-	return nil, fmt.Errorf("Status not ok:%d", resp.StatusCode)
+	return nil, fmt.Errorf("Status not ok:%d", resp.StatusCode())
 }
 
 /*DigPost -  копать*/
 func DigPost(depth int64, licID int64, posX int64, posY int64) (models.TreasureList, error) {
-	req := BasicPath + "/dig"
+	req := fasthttp.AcquireRequest()
+	resp := fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseRequest(req)
+	defer fasthttp.ReleaseResponse(resp)
+	url := BasicPath + "/dig"
+	req.SetRequestURI(url)
+	req.Header.SetMethod("POST")
+	req.Header.Set("Content-Type", "application/json")
 	dig := models.Dig{Depth: &depth, LicenseID: &licID, PosX: &posX, PosY: &posY}
 	bts, err := json.Marshal(dig)
 	if err != nil {
 		return nil, err
 	}
-	buff := bytes.NewBuffer(bts)
-	resp, err := http.Post(req, "application/json", buff)
+	req.SetBody(bts)
+	err = fasthttp.Do(req, resp)
 	if err != nil {
 		return nil, err
 	}
-	if resp.StatusCode == http.StatusOK {
-		bts, err := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode() == http.StatusOK {
+		bts := resp.Body()
 		if err != nil {
 			return nil, err
 		}
@@ -140,15 +203,15 @@ func DigPost(depth int64, licID int64, posX int64, posY int64) (models.TreasureL
 		}
 		return treasures, nil
 	}
-	if resp.StatusCode == 404 {
+	if resp.StatusCode() == 404 {
 		return nil, nil
 	}
-	_, err = getError(resp.Body)
+	_, err = getBtsError(resp.Body())
 	if err != nil {
 		return nil, err
 	}
 
-	return nil, fmt.Errorf("Status not ok:%d", resp.StatusCode)
+	return nil, fmt.Errorf("Status not ok:%d", resp.StatusCode())
 }
 
 /*PostCash - посылка cash*/
@@ -161,6 +224,7 @@ func PostCash(treasure models.Treasure) (*models.Wallet, error) {
 	req.SetRequestURI(url)
 	req.Header.SetMethod("POST")
 	req.Header.Set("Content-Type", "application/json")
+
 	bts, err := json.Marshal(treasure)
 	if err != nil {
 		return nil, err
@@ -188,13 +252,21 @@ func PostCash(treasure models.Treasure) (*models.Wallet, error) {
 
 /*GetLicenses - получение списка лицензий*/
 func GetLicenses() (models.LicenseList, error) {
-	req := BasicPath + "/licenses"
-	resp, err := http.Get(req)
+
+	req := fasthttp.AcquireRequest()
+	resp := fasthttp.AcquireResponse()
+	defer fasthttp.ReleaseRequest(req)
+	defer fasthttp.ReleaseResponse(resp)
+	url := BasicPath + "/licenses"
+	req.SetRequestURI(url)
+	req.Header.SetMethod("GET")
+	req.Header.Set("Content-Type", "application/json")
+	err := fasthttp.Do(req, resp)
 	if err != nil {
 		return nil, err
 	}
-	if resp.StatusCode == http.StatusOK {
-		bts, err := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode() == http.StatusOK {
+		bts := resp.Body()
 		if err != nil {
 			return nil, err
 		}
@@ -205,11 +277,11 @@ func GetLicenses() (models.LicenseList, error) {
 		}
 		return licList, nil
 	}
-	_, err = getError(resp.Body)
+	_, err = getBtsError(resp.Body())
 	if err != nil {
 		return nil, err
 	}
-	return nil, fmt.Errorf("Status not ok:%d", resp.StatusCode)
+	return nil, fmt.Errorf("Status not ok:%d", resp.StatusCode())
 }
 
 /*GetBasicPath - получение базового пути*/
