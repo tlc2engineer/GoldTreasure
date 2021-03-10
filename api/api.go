@@ -2,6 +2,7 @@ package api
 
 import (
 	"Golden/models"
+	"Golden/stat"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -109,6 +110,7 @@ func Explore(x, y, sizeX, sizeY int64) (*models.Amount, error) {
 	if err != nil {
 		return nil, err
 	}
+	stat.NewReq(stat.Exp)
 	if resp.StatusCode() == http.StatusOK {
 		//report := models.Report{}
 
@@ -153,6 +155,7 @@ func PostLicense(wallet models.Wallet) (*models.License, error) {
 	if err != nil {
 		return nil, err
 	}
+	stat.NewReq(stat.Lic)
 	if resp.StatusCode() == http.StatusOK {
 		bts := resp.Body()
 		if err != nil {
@@ -191,6 +194,7 @@ func DigPost(depth int64, licID int64, posX int64, posY int64) (models.TreasureL
 	if err != nil {
 		return nil, err
 	}
+	stat.NewReq(stat.Digg)
 	if resp.StatusCode() == http.StatusOK {
 		bts := resp.Body()
 		if err != nil {
@@ -234,6 +238,7 @@ func PostCash(treasure models.Treasure) (*models.Wallet, error) {
 	if err != nil {
 		return nil, err
 	}
+	stat.NewReq(stat.Cash)
 	if resp.StatusCode() == http.StatusOK {
 		wallet := models.Wallet{}
 		err = json.Unmarshal(resp.Body(), &wallet)

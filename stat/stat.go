@@ -2,15 +2,14 @@ package stat
 
 import (
 	"fmt"
-	"runtime"
 	"time"
 )
 
-/*ErrType - тип ошибки*/
-type ErrType int
+/*ReqType - тип ошибки*/
+type ReqType int
 
 const (
-	Exp ErrType = iota //exp
+	Exp ReqType = iota //exp
 	Digg
 	Cash
 	Lic
@@ -18,6 +17,8 @@ const (
 
 /*StatChan - канал статистики*/
 var statChan chan Stat = make(chan Stat)
+var numReq = 0
+var numExpReq, numDigReq, numLicReq, numCashReq int
 
 /*StatGor - вывод статистики*/
 func StatGor() {
@@ -70,21 +71,14 @@ func StatGor() {
 			}
 		}
 	}()
-
+	tmBeg := time.Now()
 	for {
 		select {
 		case <-time.Tick(time.Minute):
 			fmt.Printf("LicFree: %d, LicPay: %d Areas: %d Amounts: %d Digged: %d DiggedAmounts: %d Coins: %d\n", freeLicNum, payLicNum, areas, amounts, digged, diggedAmounts, coinSum)
 			fmt.Printf("Errors: %d, ExpErr: %d DigErr: %d CashErr: %d LicErr: %d \n", errors, exErrors, digErrors, cashErrors, licErrors)
-			fmt.Printf("DigTreas: %d,DigTlist: %d SendTlist: %d ExpAreaErr: %d\n", digTreasures, digTlist, sendTlist, expAreaErr)
-		case <-time.After(time.Minute * 3):
-			var m runtime.MemStats
-			runtime.ReadMemStats(&m)
-			// For info on each, see: https://golang.org/pkg/runtime/#MemStats
-			fmt.Printf("Alloc = %v MiB", bToMb(m.Alloc))
-			fmt.Printf("\tTotalAlloc = %v MiB", bToMb(m.TotalAlloc))
-			fmt.Printf("\tSys = %v MiB", bToMb(m.Sys))
-			fmt.Printf("\tNumGC = %v\n", m.NumGC)
+			fmt.Printf("DigTreas: %d,DigTlist: %d SendTlist: %d \n", digTreasures, digTlist, sendTlist)
+			fmt.Printf("Req: %d,Exp: %d,Dig: %d,Lic: %d, Cash: %d,Time: %s\n", numReq, numExpReq, numDigReq, numLicReq, numCashReq, time.Since(tmBeg))
 		}
 	}
 
@@ -128,7 +122,7 @@ type CoinStat interface {
 /*ErrStat - статистика ошибок*/
 type ErrStat interface {
 	Stat
-	Type() ErrType
+	Type() ReqType
 }
 
 func bToMb(b uint64) uint64 {

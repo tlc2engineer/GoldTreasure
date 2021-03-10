@@ -76,19 +76,19 @@ func NewCoinStat(coins int) {
 }
 
 type error struct {
-	_type ErrType
+	_type ReqType
 }
 
 func (err error) StatName() string {
 	return "Err"
 }
 
-func (err error) Type() ErrType {
+func (err error) Type() ReqType {
 	return err._type
 }
 
 /*NewStatErr - новая ошибка*/
-func NewStatErr(_type ErrType) {
+func NewStatErr(_type ReqType) {
 	statChan <- error{_type: _type}
 }
 
@@ -110,4 +110,20 @@ func NewSendTlist() {
 /*NewExpAreaErr - непонятная ошибка с подсчетом в функции exploreArea*/
 func NewExpAreaErr() {
 	expAreaErr++
+}
+
+/*NewReq - новый запрос*/
+func NewReq(tp ReqType) {
+	numReq++
+	switch tp {
+	case Exp:
+		numExpReq++
+	case Digg:
+		numDigReq++
+	case Cash:
+		numCashReq++
+	case Lic:
+		numLicReq++
+
+	}
 }

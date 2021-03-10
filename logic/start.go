@@ -9,7 +9,7 @@ import (
 
 var expChainFull bool
 
-const targetAmount = 3
+const targetAmount = 2
 const segmentSize = 8
 
 /*Start - запуск базовой логики*/
@@ -76,7 +76,8 @@ func Start() {
 			}
 		}
 	}()
-
+	// research(100, 100+8*20, 8)
+	// research(100, 100+16*20, 16)
 	//go searchSegments(0, 1841, 3491, 3491, segmentSize, targetAmount, chDig)
 	//searchSegments(0, 0, 3491, 1741, segmentSize, targetAmount, chDig)
 
