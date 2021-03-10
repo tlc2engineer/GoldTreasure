@@ -71,14 +71,21 @@ func StatGor() {
 			}
 		}
 	}()
-	tmBeg := time.Now()
+	n := 0
 	for {
 		select {
 		case <-time.Tick(time.Minute):
+			n++
+			fmt.Println("N:", n)
 			fmt.Printf("LicFree: %d, LicPay: %d Areas: %d Amounts: %d Digged: %d DiggedAmounts: %d Coins: %d\n", freeLicNum, payLicNum, areas, amounts, digged, diggedAmounts, coinSum)
 			fmt.Printf("Errors: %d, ExpErr: %d DigErr: %d CashErr: %d LicErr: %d \n", errors, exErrors, digErrors, cashErrors, licErrors)
 			fmt.Printf("DigTreas: %d,DigTlist: %d SendTlist: %d \n", digTreasures, digTlist, sendTlist)
-			fmt.Printf("Req: %d,Exp: %d,Dig: %d,Lic: %d, Cash: %d,Time: %s\n", numReq, numExpReq, numDigReq, numLicReq, numCashReq, time.Since(tmBeg))
+			fmt.Printf("Req: %d,Exp: %d,Dig: %d,Lic: %d, Cash: %d\n", numReq, numExpReq, numDigReq, numLicReq, numCashReq)
+			if n == 10 {
+				for _, level := range levels {
+					fmt.Printf("Depth: %d,time: %5.2f,treas: %5.2f \n", level.depth, (float64(level.totalTime))/float64(level.total), float64(level.totalTreasures)/float64(level.total))
+				}
+			}
 		}
 	}
 

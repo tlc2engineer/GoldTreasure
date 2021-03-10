@@ -4,6 +4,7 @@ import (
 	"Golden/api"
 	"Golden/models"
 	"Golden/stat"
+	"time"
 )
 
 const maxDepth = 10
@@ -19,13 +20,18 @@ func DigG(ch chan DigData, cht chan models.TreasureList, chLic chan *models.Lice
 				if license != nil {
 					chUsedLic <- license.ID // использованная лицензия
 				}
-				license = <-chLic // полцчаем лицензию
+				license = <-chLic // получаем лицензию
 			}
+			tbg := time.Now()
 			tlist, err := api.DigPost(int64(depth), *license.ID, ddata.x, ddata.y)
+			dt := time.Since(tbg).Milliseconds()
 			if err != nil {
 				stat.NewStatErr(stat.Digg)
 				//fmt.Println("Dig err", err)
 			} else {
+				if tlist != nil {
+					stat.DepthStat(int(dt), depth, len(tlist))
+				}
 				*license.DigUsed++
 				depth++
 				if tlist != nil {
@@ -33,9 +39,6 @@ func DigG(ch chan DigData, cht chan models.TreasureList, chLic chan *models.Lice
 					stat.NewSendTreas(len(tlist))
 					stat.NewDigTlist()
 					cht <- tlist
-					// if len(cht) > 99 {
-					// 	fmt.Println("cht chain is full")
-					// }
 				}
 			}
 		}
