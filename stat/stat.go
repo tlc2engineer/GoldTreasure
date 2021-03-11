@@ -82,9 +82,48 @@ func StatGor() {
 			fmt.Printf("DigTreas: %d,DigTlist: %d SendTlist: %d \n", digTreasures, digTlist, sendTlist)
 			fmt.Printf("Req: %d,Exp: %d,Dig: %d,Lic: %d, Cash: %d\n", numReq, numExpReq, numDigReq, numLicReq, numCashReq)
 			if n == 10 {
-				for _, level := range levels {
-					fmt.Printf("Depth: %d,time: %5.2f,treas: %5.2f \n", level.depth, (float64(level.totalTime))/float64(level.total), float64(level.totalTreasures)/float64(level.total))
+				allTime := 0.0 // общее время по уровню
+				sumTreas := 0
+				sumTime := 0
+
+				for i := 1; i <= 10; i++ {
+					level := levels[i]
+
+					lTime := (float64(level.totalTime)) / float64(level.total)
+					avgTreas := float64(level.totalTreasures) / float64(level.total)
+					allTime += lTime
+
+					eff := avgTreas / allTime
+					// расчет эффективности
+					var effTime int64 = 0
+					var effTreas int64 = 0
+					var waitEff float64 = 0.0
+					for j := i + 1; j <= 10; j++ {
+						for k := i + 1; k <= j; k++ {
+							effTime += int64(levels[k].totalTime)
+						}
+						effTreas += int64(levels[j].totalTreasures)
+					}
+					if effTime > 0 {
+						waitEff = float64(effTreas) / float64(effTime)
+					}
+					fmt.Printf("D: %d,tot: %d, time: %5.2f,treas: %5.2f,allT: %5.2F,eff: %5.2f,waitEff: %5.2f  \n", level.depth, level.total, lTime,
+						avgTreas, allTime, eff, waitEff)
+
 				}
+				for i := 1; i <= 10; i++ {
+					level := levels[i]
+					sumTreas += level.totalTreasures
+					for k := 1; k <= i; k++ {
+						sumTime += levels[k].totalTime
+					}
+				}
+				fmt.Printf("Eff: %5.2f\n", float64(sumTreas)/float64(sumTime))
+				// fmt.Println("Разные цены", diffPrice)
+				// for i := 1; i <= 21; i++ {
+				// 	numDigg := licStatMap[i]
+				// 	fmt.Printf("Price: %d,Digg: %d;\t", i, numDigg)
+				// }
 			}
 		}
 	}

@@ -20,7 +20,7 @@ func Start() {
 
 	go stat.StatGor()
 	//-----------------------------
-	chTrlist := make(chan models.TreasureList, 20)
+	chTrlist := make(chan treasData, 20)
 	chCoin := make(chan uint32, 100)
 	go PostCashG(chTrlist, chCoin, true)
 	go PostCashG(chTrlist, chCoin, false)
@@ -84,5 +84,6 @@ func Start() {
 	//exploreSegment(0, 0, 3498, 1748, 4, chDig)
 
 	//exploreSegment(0, 1750, 3498, 3498, 4, chDig)
-	searchArea(0, 0, 3400, 3400, segmentSize, chDig, targetAmount)
+	go searchArea(0, 1750, 3400, 1500, segmentSize, chDig, targetAmount)
+	searchArea(0, 0, 3400, 1700, segmentSize, chDig, targetAmount)
 }

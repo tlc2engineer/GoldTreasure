@@ -10,7 +10,7 @@ import (
 const maxDepth = 10
 
 /*DigG - горутина копания*/
-func DigG(ch chan DigData, cht chan models.TreasureList, chLic chan *models.License, chUsedLic chan *int64) {
+func DigG(ch chan DigData, cht chan treasData, chLic chan *models.License, chUsedLic chan *int64) {
 	var license *models.License // лицензия
 	for ddata := range ch {
 		trCount := ddata.amount // число ненайденных сокровиц
@@ -29,16 +29,14 @@ func DigG(ch chan DigData, cht chan models.TreasureList, chLic chan *models.Lice
 				stat.NewStatErr(stat.Digg)
 				//fmt.Println("Dig err", err)
 			} else {
-				if tlist != nil {
-					stat.DepthStat(int(dt), depth, len(tlist))
-				}
+
 				*license.DigUsed++
 				depth++
 				if tlist != nil {
 					trCount--
 					stat.NewSendTreas(len(tlist))
 					stat.NewDigTlist()
-					cht <- tlist
+					cht <- treasData{tlist: tlist, x: int(ddata.x), y: int(ddata.y), depth: int(depth - 1), dt: dt}
 				}
 			}
 		}

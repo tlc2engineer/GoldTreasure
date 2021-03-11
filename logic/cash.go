@@ -8,9 +8,10 @@ import (
 )
 
 /*PostCashG - горутина отправки сообщений о деньгах*/
-func PostCashG(ch chan models.TreasureList, chCoins chan uint32, toLic bool) {
-	for tlist := range ch {
-		for _, treasure := range tlist {
+func PostCashG(ch chan treasData, chCoins chan uint32, toLic bool) {
+	for tData := range ch {
+		sum := 0
+		for _, treasure := range tData.tlist {
 			w, err := api.PostCash(treasure)
 			for err != nil && err.Error() == "Status not ok:503" {
 				stat.NewStatErr(stat.Cash)
@@ -22,6 +23,7 @@ func PostCashG(ch chan models.TreasureList, chCoins chan uint32, toLic bool) {
 			} else {
 				stat.NewSendTlist()
 				stat.NewCoinStat(len(*w))
+				sum += len(*w)
 				if w != nil && toLic {
 					for _, coin := range *w {
 						chCoins <- coin
@@ -30,5 +32,12 @@ func PostCashG(ch chan models.TreasureList, chCoins chan uint32, toLic bool) {
 			}
 
 		}
+		stat.DepthStat(int(tData.dt), tData.depth, sum)
 	}
+}
+
+type treasData struct {
+	tlist       models.TreasureList
+	x, y, depth int
+	dt          int64
 }
