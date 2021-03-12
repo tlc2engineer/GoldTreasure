@@ -9,8 +9,8 @@ import (
 
 var expChainFull bool
 
-const targetAmount = 2
-const segmentSize = 8
+const targetAmount = 4 //2
+const segmentSize = 16 //8
 
 /*Start - запуск базовой логики*/
 func Start() {
