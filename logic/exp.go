@@ -217,11 +217,11 @@ func searchArea(xStart, yStart, sizeX, sizeY, step int, ch chan DigData, limit i
 				fmt.Println(err)
 			}
 			if seg.amount >= limit {
-				if !expChainFull {
-					go explore(seg, ch)
-				} else {
-					explore(seg, ch)
-				}
+				//if !expChainFull {
+				go explore(seg, ch)
+				//	} else {
+				//		explore(seg, ch)
+				//	}
 			}
 		}
 	}
@@ -239,6 +239,7 @@ func explore(seg *segment, ch chan DigData) {
 	if seg1.amount > 0 {
 
 		explore(seg1, ch)
+
 	}
 	if seg2.amount > 0 {
 		explore(seg2, ch)

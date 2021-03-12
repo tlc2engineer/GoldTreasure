@@ -107,8 +107,8 @@ func StatGor() {
 					if effTime > 0 {
 						waitEff = float64(effTreas) / float64(effTime)
 					}
-					fmt.Printf("D: %d,tot: %d, time: %5.2f,treas: %5.2f,allT: %5.2F,eff: %5.2f,waitEff: %5.2f  \n", level.depth, level.total, lTime,
-						avgTreas, allTime, eff, waitEff)
+					fmt.Printf("D: %d,tot: %d, time: %5.2f,treas: %5.2f,allT: %5.2F,eff: %5.2f,waitEff: %5.2f,min: %d,max: %d  \n", level.depth, level.total, lTime,
+						avgTreas, allTime, eff, waitEff, level.min, level.max)
 
 				}
 				for i := 1; i <= 10; i++ {
@@ -125,8 +125,9 @@ func StatGor() {
 				// 	fmt.Printf("Price: %d,Digg: %d;\t", i, numDigg)
 				// }
 				for ls := range licDep {
-					fmt.Printf("NumLic: %d,Eff: %5.3f\n", ls, float64(licDep[ls].sumDt)/float64(licDep[ls].num))
+					fmt.Printf("NumLic: %d,Num: %d, Eff: %5.3f\n", ls, licDep[ls].num, float64(licDep[ls].sumDt)/float64(licDep[ls].num))
 				}
+				fmt.Printf("Лицензий: %d, Время: %5.2f\n", numLic, float64(sumLicTime)/float64(numLic))
 			}
 		}
 	}

@@ -17,10 +17,12 @@ func DigG(ch chan DigData, cht chan treasData, chLic chan *models.License, chUse
 		depth := 1              //глубина
 		for trCount > 0 && depth <= maxDepth {
 			if license == nil || *license.DigAllowed <= *license.DigUsed {
+				tm := time.Now()
 				if license != nil {
 					chUsedLic <- license.ID // использованная лицензия
 				}
 				license = <-chLic // получаем лицензию
+				stat.NewLicTime(int(time.Since(tm).Milliseconds()))
 			}
 			tbg := time.Now()
 			tlist, err := api.DigPost(int64(depth), *license.ID, ddata.x, ddata.y)
