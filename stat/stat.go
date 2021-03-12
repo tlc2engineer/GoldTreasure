@@ -124,6 +124,9 @@ func StatGor() {
 				// 	numDigg := licStatMap[i]
 				// 	fmt.Printf("Price: %d,Digg: %d;\t", i, numDigg)
 				// }
+				for ls := range licDep {
+					fmt.Printf("NumLic: %d,Eff: %5.3f\n", ls, float64(licDep[ls].sumDt)/float64(licDep[ls].num))
+				}
 			}
 		}
 	}

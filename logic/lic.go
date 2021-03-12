@@ -16,6 +16,7 @@ func LicGor(chCoin chan uint32, chLic chan *models.License) {
 	var coin uint32
 	var wallet models.Wallet
 	var free bool = false
+	var randNumb = 1
 	for {
 		//Изменеие количества лицензий
 		mu.Lock()
@@ -30,7 +31,7 @@ func LicGor(chCoin chan uint32, chLic chan *models.License) {
 		//----------------------------
 		wallet = models.Wallet{} // новый кошелек
 		free = false
-		if len(chCoin) > 11 {
+		if len(chCoin) > 11 && randNumb == 3 {
 			var count int = 0
 			for count < 11 {
 				coin = <-chCoin
@@ -38,14 +39,19 @@ func LicGor(chCoin chan uint32, chLic chan *models.License) {
 				count++
 			}
 		} else {
-			select {
-			case coin = <-chCoin:
-				wallet = append(wallet, coin)
-				free = false
-			default:
+			if randNumb == 2 {
+				select {
+				case coin = <-chCoin:
+					wallet = append(wallet, coin)
+					free = false
+				default:
+					free = true
+				}
+			} else {
 				free = true
 			}
 		}
+		//----------------------------
 		lic, err := api.PostLicense(wallet)
 		if err != nil {
 			stat.NewStatErr(stat.Lic)
@@ -55,6 +61,10 @@ func LicGor(chCoin chan uint32, chLic chan *models.License) {
 		} else {
 			stat.NewLcStat(free)
 			chLic <- lic
+		}
+		randNumb++
+		if randNumb > 3 {
+			randNumb = 1
 		}
 
 	}

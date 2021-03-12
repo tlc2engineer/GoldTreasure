@@ -32,7 +32,7 @@ func PostCashG(ch chan treasData, chCoins chan uint32, toLic bool) {
 			}
 
 		}
-		stat.DepthStat(int(tData.dt), tData.depth, sum)
+		stat.DigDeepStat(int(tData.dt), tData.depth, sum, tData.licType)
 	}
 }
 
@@ -40,4 +40,5 @@ type treasData struct {
 	tlist       models.TreasureList
 	x, y, depth int
 	dt          int64
+	licType     int
 }
