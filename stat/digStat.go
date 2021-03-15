@@ -13,6 +13,7 @@ type level struct {
 var levels map[int]*level
 var licDep map[int]licDigStat
 var mut *sync.Mutex = new(sync.Mutex)
+var treasureMap [][]byte
 
 func init() {
 	levels = make(map[int]*level)
@@ -25,10 +26,14 @@ func init() {
 		licStatMap[i] = 0
 	}
 	licDep = make(map[int]licDigStat)
+	treasureMap := make([][]byte, 600)
+	for i := 0; i < 600; i++ {
+		treasureMap[i] = make([]byte, 600)
+	}
 }
 
 /*DigDeepStat - статистика по глубине и количеству сокровищ*/
-func DigDeepStat(t int, depth int, treasures int, licType int) {
+func DigDeepStat(t int, depth int, treasures int, licType int, x int, y int) {
 	level := levels[depth]
 	level.total++
 	level.totalTime += t
@@ -53,10 +58,32 @@ func DigDeepStat(t int, depth int, treasures int, licType int) {
 		licDep[licType] = stat
 	}
 	mut.Unlock()
+	treasureMap[x][y] = byte(depth)
 
 }
 
 type licDigStat struct {
 	sumDt int64
 	num   int
+}
+
+type mapUnit struct {
+	deep byte
+}
+
+func createByteArr(trMapData [][]byte) []byte {
+	retArray := make([]byte, 0)
+	var coord int = 0
+	for x := 0; x < 600; x++ {
+		for y := 0; y < 600; y++ {
+			if treasureMap[x][y] > 0 {
+				pCoord := x*600 + y
+				dL := pCoord - coord
+				var b0, b1 uint8 = uint8(dL >> 8), uint8(dL & 0xff)
+				retArray = append(retArray, b0, b1, trMapData[x][y])
+				coord = pCoord
+			}
+		}
+	}
+	return retArray
 }

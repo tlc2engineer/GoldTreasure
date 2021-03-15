@@ -32,7 +32,7 @@ func PostCashG(ch chan treasData, chCoins chan uint32, toLic bool) {
 			}
 
 		}
-		stat.DigDeepStat(int(tData.dt), tData.depth, sum, tData.licType)
+		stat.DigDeepStat(int(tData.dt), tData.depth, sum, tData.licType, tData.x, tData.y)
 	}
 }
 

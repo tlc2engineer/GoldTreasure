@@ -1,6 +1,7 @@
 package stat
 
 import (
+	"encoding/base64"
 	"fmt"
 	"time"
 )
@@ -75,59 +76,62 @@ func StatGor() {
 	for {
 		select {
 		case <-time.Tick(time.Minute):
-			n++
-			fmt.Println("N:", n)
-			fmt.Printf("LicFree: %d, LicPay: %d Areas: %d Amounts: %d Digged: %d DiggedAmounts: %d Coins: %d\n", freeLicNum, payLicNum, areas, amounts, digged, diggedAmounts, coinSum)
-			fmt.Printf("Errors: %d, ExpErr: %d DigErr: %d CashErr: %d LicErr: %d \n", errors, exErrors, digErrors, cashErrors, licErrors)
-			fmt.Printf("DigTreas: %d,DigTlist: %d SendTlist: %d \n", digTreasures, digTlist, sendTlist)
-			fmt.Printf("Req: %d,Exp: %d,Dig: %d,Lic: %d, Cash: %d\n", numReq, numExpReq, numDigReq, numLicReq, numCashReq)
+			// n++
+			// fmt.Println("N:", n)
+			// fmt.Printf("LicFree: %d, LicPay: %d Areas: %d Amounts: %d Digged: %d DiggedAmounts: %d Coins: %d\n", freeLicNum, payLicNum, areas, amounts, digged, diggedAmounts, coinSum)
+			// fmt.Printf("Errors: %d, ExpErr: %d DigErr: %d CashErr: %d LicErr: %d \n", errors, exErrors, digErrors, cashErrors, licErrors)
+			// fmt.Printf("DigTreas: %d,DigTlist: %d SendTlist: %d \n", digTreasures, digTlist, sendTlist)
+			// fmt.Printf("Req: %d,Exp: %d,Dig: %d,Lic: %d, Cash: %d\n", numReq, numExpReq, numDigReq, numLicReq, numCashReq)
 			if n == 10 {
-				allTime := 0.0 // общее время по уровню
-				sumTreas := 0
-				sumTime := 0
+				//allTime := 0.0 // общее время по уровню
+				//sumTreas := 0
+				//sumTime := 0
 
-				for i := 1; i <= 10; i++ {
-					level := levels[i]
+				// for i := 1; i <= 10; i++ {
+				// 	level := levels[i]
 
-					lTime := (float64(level.totalTime)) / float64(level.total)
-					avgTreas := float64(level.totalTreasures) / float64(level.total)
-					allTime += lTime
+				// 	lTime := (float64(level.totalTime)) / float64(level.total)
+				// 	avgTreas := float64(level.totalTreasures) / float64(level.total)
+				// 	allTime += lTime
 
-					eff := avgTreas / allTime
-					// расчет эффективности
-					var effTime int64 = 0
-					var effTreas int64 = 0
-					var waitEff float64 = 0.0
-					for j := i + 1; j <= 10; j++ {
-						for k := i + 1; k <= j; k++ {
-							effTime += int64(levels[k].totalTime)
-						}
-						effTreas += int64(levels[j].totalTreasures)
-					}
-					if effTime > 0 {
-						waitEff = float64(effTreas) / float64(effTime)
-					}
-					fmt.Printf("D: %d,tot: %d, time: %5.2f,treas: %5.2f,allT: %5.2F,eff: %5.2f,waitEff: %5.2f,min: %d,max: %d  \n", level.depth, level.total, lTime,
-						avgTreas, allTime, eff, waitEff, level.min, level.max)
+				// 	eff := avgTreas / allTime
+				// 	// расчет эффективности
+				// 	var effTime int64 = 0
+				// 	var effTreas int64 = 0
+				// 	var waitEff float64 = 0.0
+				// 	for j := i + 1; j <= 10; j++ {
+				// 		for k := i + 1; k <= j; k++ {
+				// 			effTime += int64(levels[k].totalTime)
+				// 		}
+				// 		effTreas += int64(levels[j].totalTreasures)
+				// 	}
+				// 	if effTime > 0 {
+				// 		waitEff = float64(effTreas) / float64(effTime)
+				// 	}
+				// 	fmt.Printf("D: %d,tot: %d, time: %5.2f,treas: %5.2f,allT: %5.2F,eff: %5.2f,waitEff: %5.2f,min: %d,max: %d  \n", level.depth, level.total, lTime,
+				// 		avgTreas, allTime, eff, waitEff, level.min, level.max)
 
-				}
-				for i := 1; i <= 10; i++ {
-					level := levels[i]
-					sumTreas += level.totalTreasures
-					for k := 1; k <= i; k++ {
-						sumTime += levels[k].totalTime
-					}
-				}
-				fmt.Printf("Eff: %5.2f\n", float64(sumTreas)/float64(sumTime))
+				// }
+				// for i := 1; i <= 10; i++ {
+				// 	level := levels[i]
+				// 	sumTreas += level.totalTreasures
+				// 	for k := 1; k <= i; k++ {
+				// 		sumTime += levels[k].totalTime
+				// 	}
+				// }
+				// fmt.Printf("Eff: %5.2f\n", float64(sumTreas)/float64(sumTime))
 				// fmt.Println("Разные цены", diffPrice)
 				// for i := 1; i <= 21; i++ {
 				// 	numDigg := licStatMap[i]
 				// 	fmt.Printf("Price: %d,Digg: %d;\t", i, numDigg)
 				// }
-				for ls := range licDep {
-					fmt.Printf("NumLic: %d,Num: %d, Eff: %5.3f\n", ls, licDep[ls].num, float64(licDep[ls].sumDt)/float64(licDep[ls].num))
-				}
-				fmt.Printf("Лицензий: %d, Время: %5.2f\n", numLic, float64(sumLicTime)/float64(numLic))
+				// for ls := range licDep {
+				// 	fmt.Printf("NumLic: %d,Num: %d, Eff: %5.3f\n", ls, licDep[ls].num, float64(licDep[ls].sumDt)/float64(licDep[ls].num))
+				// }
+				// fmt.Printf("Лицензий: %d, Время: %5.2f\n", numLic, float64(sumLicTime)/float64(numLic))
+				trBytes := createByteArr(treasureMap)
+				str := base64.StdEncoding.EncodeToString(trBytes)
+				fmt.Print(str)
 			}
 		}
 	}
