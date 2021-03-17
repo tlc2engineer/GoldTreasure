@@ -62,7 +62,9 @@ func DigDeepStat(t int, depth int, treasures int, licType int, x int, y int) {
 		licDep[licType] = stat
 	}
 	mut.Unlock()
-	treasureMap[x][y] = byte(depth)
+	if x < 300 && y < 300 {
+		treasureMap[x][y] = byte(depth)
+	}
 
 }
 
