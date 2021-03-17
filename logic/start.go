@@ -86,5 +86,8 @@ func Start() {
 
 	//exploreSegment(0, 1750, 3498, 3498, 4, chDig)
 	//go searchArea(0, 1750, 3400, 1500, segmentSize, chDig, targetAmount)
-	searchArea(0, 0, 600, 600, segmentSize, chDig, targetAmount)
+	searchArea(0, 0, 300, 300, segmentSize, chDig, targetAmount)
+	time.Sleep(time.Second * 20)
+	stat.PrintMap()
+
 }

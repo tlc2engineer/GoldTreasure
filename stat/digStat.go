@@ -1,6 +1,10 @@
 package stat
 
-import "sync"
+import (
+	"encoding/base64"
+	"fmt"
+	"sync"
+)
 
 type level struct {
 	depth          int
@@ -26,7 +30,7 @@ func init() {
 		licStatMap[i] = 0
 	}
 	licDep = make(map[int]licDigStat)
-	treasureMap := make([][]byte, 600)
+	treasureMap = make([][]byte, 600)
 	for i := 0; i < 600; i++ {
 		treasureMap[i] = make([]byte, 600)
 	}
@@ -74,10 +78,10 @@ type mapUnit struct {
 func createByteArr(trMapData [][]byte) []byte {
 	retArray := make([]byte, 0)
 	var coord int = 0
-	for x := 0; x < 600; x++ {
-		for y := 0; y < 600; y++ {
+	for x := 0; x < 300; x++ {
+		for y := 0; y < 300; y++ {
 			if treasureMap[x][y] > 0 {
-				pCoord := x*600 + y
+				pCoord := x*300 + y
 				dL := pCoord - coord
 				var b0, b1 uint8 = uint8(dL >> 8), uint8(dL & 0xff)
 				retArray = append(retArray, b0, b1, trMapData[x][y])
@@ -86,4 +90,11 @@ func createByteArr(trMapData [][]byte) []byte {
 		}
 	}
 	return retArray
+}
+
+func PrintMap() {
+	fmt.Print("Map:")
+	trBytes := createByteArr(treasureMap)
+	str := base64.StdEncoding.EncodeToString(trBytes)
+	fmt.Print(str)
 }

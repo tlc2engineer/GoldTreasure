@@ -1,8 +1,7 @@
 package stat
 
 import (
-	"encoding/base64"
-	"fmt"
+
 	"time"
 )
 
@@ -129,9 +128,7 @@ func StatGor() {
 				// 	fmt.Printf("NumLic: %d,Num: %d, Eff: %5.3f\n", ls, licDep[ls].num, float64(licDep[ls].sumDt)/float64(licDep[ls].num))
 				// }
 				// fmt.Printf("Лицензий: %d, Время: %5.2f\n", numLic, float64(sumLicTime)/float64(numLic))
-				trBytes := createByteArr(treasureMap)
-				str := base64.StdEncoding.EncodeToString(trBytes)
-				fmt.Print(str)
+				PrintMap()
 			}
 		}
 	}
