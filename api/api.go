@@ -281,7 +281,7 @@ func GetBasicPath() {
 		address = "localhost"
 	}
 	BasicPath = fmt.Sprintf("http://%s:8000", address)
-	fmt.Printf("basic path: %s\n", BasicPath)
+	//fmt.Printf("basic path: %s\n", BasicPath)
 
 }
 
