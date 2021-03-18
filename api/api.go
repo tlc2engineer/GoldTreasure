@@ -17,6 +17,7 @@ import (
 
 /*BasicPath - базовый путь*/
 var BasicPath string
+var dig = models.Dig{}
 
 var areaPool = sync.Pool{
 	New: func() interface{} {
@@ -94,17 +95,7 @@ func Explore(x, y, sizeX, sizeY int64) (*models.Amount, error) {
 	if err != nil {
 		return nil, err
 	}
-	// area := models.Area{
-	// 	PosX:  &x,
-	// 	PosY:  &y,
-	// 	SizeX: sizeX,
-	// 	SizeY: sizeY,
-	// }
-	// bts, err := area.MarshalJSON()
-	// //bts, err := json.Marshal(*area)
-	// if err != nil {
-	// 	return nil, err
-	// }
+
 	req.SetBody(buff.Bytes()[:n])
 	err = fasthttp.Do(req, resp)
 	if err != nil {
@@ -112,12 +103,10 @@ func Explore(x, y, sizeX, sizeY int64) (*models.Amount, error) {
 	}
 	stat.NewReq(stat.Exp)
 	if resp.StatusCode() == http.StatusOK {
-		//report := models.Report{}
-
 		report := reportPool.Get().(*models.Report)
 		defer reportPool.Put(report)
 		err = report.UnmarshalJSON(resp.Body())
-		//err = json.Unmarshal(resp.Body(), report)
+
 		if err != nil {
 			return nil, err
 		}
@@ -157,13 +146,12 @@ func PostLicense(wallet models.Wallet) (*models.License, error) {
 	}
 	stat.NewReq(stat.Lic)
 	if resp.StatusCode() == http.StatusOK {
-		bts := resp.Body()
+		license := new(models.License)
+		err := license.UnmarshalBinary(resp.Body())
 		if err != nil {
 			return nil, err
 		}
-		license := models.License{}
-		json.Unmarshal(bts, &license)
-		return &license, err
+		return license, err
 	}
 	if resp.StatusCode() != 502 {
 		_, err = getBtsError(resp.Body())
@@ -184,8 +172,13 @@ func DigPost(depth int64, licID int64, posX int64, posY int64) (models.TreasureL
 	req.SetRequestURI(url)
 	req.Header.SetMethod("POST")
 	req.Header.Set("Content-Type", "application/json")
-	dig := models.Dig{Depth: &depth, LicenseID: &licID, PosX: &posX, PosY: &posY}
-	bts, err := json.Marshal(dig)
+	//dig := models.Dig{Depth: &depth, LicenseID: &licID, PosX: &posX, PosY: &posY}
+	dig.Depth = &depth
+	dig.LicenseID = &licID
+	dig.PosX = &posX
+	dig.PosY = &posY
+	bts, err := dig.MarshalJSON()
+	//bts, err := json.Marshal(dig)
 	if err != nil {
 		return nil, err
 	}
