@@ -11,5 +11,6 @@ require (
 	github.com/klauspost/compress v1.11.10 // indirect
 	github.com/mailru/easyjson v0.7.7
 	github.com/valyala/fasthttp v1.22.0
+	github.com/valyala/fastjson v1.6.3
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 )

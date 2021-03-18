@@ -9,8 +9,8 @@ import (
 
 var expChainFull bool
 
-const targetAmount = 4 //2
-const segmentSize = 16 //8
+const targetAmount = 2 //2
+const segmentSize = 8  //8
 
 /*Start - запуск базовой логики*/
 func Start() {
@@ -70,9 +70,8 @@ func Start() {
 		for {
 			select {
 			case <-time.Tick(time.Millisecond * 500):
-				if expChainFull != (len(chDig) > 198) {
-					expChainFull = len(chDig) > 198
-					time.Sleep(time.Second * 2)
+				if expChainFull != (len(chDig) > 100) {
+					expChainFull = len(chDig) > 100
 				}
 			}
 		}

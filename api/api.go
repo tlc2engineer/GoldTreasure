@@ -13,6 +13,7 @@ import (
 	"sync"
 
 	"github.com/valyala/fasthttp"
+	"github.com/valyala/fastjson"
 )
 
 /*BasicPath - базовый путь*/
@@ -133,13 +134,20 @@ func PostLicense(wallet models.Wallet) (*models.License, error) {
 	req.Header.SetMethod("POST")
 	req.Header.Set("Content-Type", "application/json")
 
-	bts, err := json.Marshal(wallet)
-	if err != nil {
-		return nil, err
+	bbuf := bbufPool.Get().(*bytes.Buffer)
+	defer bbufPool.Put(bbuf)
+	bbuf.Reset()
+	bbuf.WriteString("[")
+	for i := 0; i < len(wallet); i++ {
+		coin := wallet[i]
+		bbuf.WriteString(fmt.Sprintf("%d", coin))
+		if i < len(wallet)-1 {
+			bbuf.WriteString(",")
+		}
 	}
-
-	req.SetBody(bts)
-	err = fasthttp.Do(req, resp)
+	bbuf.WriteString("]")
+	req.SetBody(bbuf.Bytes())
+	err := fasthttp.Do(req, resp)
 
 	if err != nil {
 		return nil, err
@@ -178,7 +186,6 @@ func DigPost(depth int64, licID int64, posX int64, posY int64) (models.TreasureL
 	dig.PosX = &posX
 	dig.PosY = &posY
 	bts, err := dig.MarshalJSON()
-	//bts, err := json.Marshal(dig)
 	if err != nil {
 		return nil, err
 	}
@@ -189,16 +196,7 @@ func DigPost(depth int64, licID int64, posX int64, posY int64) (models.TreasureL
 	}
 	stat.NewReq(stat.Digg)
 	if resp.StatusCode() == http.StatusOK {
-		bts := resp.Body()
-		if err != nil {
-			return nil, err
-		}
-		treasures := models.TreasureList{}
-		err = json.Unmarshal(bts, &treasures)
-		if err != nil {
-			return nil, err
-		}
-		return treasures, nil
+		return getTreasureList(resp.Body())
 	}
 	if resp.StatusCode() == 404 {
 		return nil, nil
@@ -233,14 +231,8 @@ func PostCash(treasure models.Treasure) (*models.Wallet, error) {
 	}
 	stat.NewReq(stat.Cash)
 	if resp.StatusCode() == http.StatusOK {
-		wallet := models.Wallet{}
-		err = json.Unmarshal(resp.Body(), &wallet)
-		if err != nil {
-			return nil, err
-		}
-		return &wallet, nil
+		return getWallet(resp.Body())
 	}
-
 	_, err = getBtsError(resp.Body())
 	if err != nil {
 		return nil, err
@@ -312,4 +304,38 @@ func getBtsError(bts []byte) (*models.Error, error) {
 	//fmt.Println(*error.Message, *error.Code)
 	return &error, nil
 
+}
+
+func getTreasureList(bts []byte) (models.TreasureList, error) {
+	trList := models.TreasureList{}
+	var p fastjson.Parser
+	val, err := p.ParseBytes(bts)
+	if err != nil {
+		return nil, err
+	}
+	arr, err := val.Array()
+	if err != nil {
+		return nil, err
+	}
+	for _, treasure := range arr {
+		trList = append(trList, models.Treasure(treasure.GetStringBytes()))
+	}
+	return trList, nil
+}
+
+func getWallet(bts []byte) (*models.Wallet, error) {
+	wallet := models.Wallet{}
+	var p fastjson.Parser
+	val, err := p.ParseBytes(bts)
+	if err != nil {
+		return nil, err
+	}
+	arr, err := val.Array()
+	if err != nil {
+		return nil, err
+	}
+	for _, coin := range arr {
+		wallet = append(wallet, uint32(coin.GetInt()))
+	}
+	return &wallet, nil
 }
