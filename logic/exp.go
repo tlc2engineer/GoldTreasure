@@ -4,8 +4,14 @@ import (
 	"Golden/api"
 	"Golden/stat"
 	"fmt"
+	"sync"
 	"time"
 )
+
+const areaLimit = 4
+
+var areasNumber int
+var muExp = new(sync.Mutex)
 
 func divideSegment(x, y, size int64, ch chan DigData) int {
 	sum := 0
@@ -176,7 +182,7 @@ func (seg *segment) divide2() (seg1 *segment, seg2 *segment) {
 		for err != nil {
 			err = seg1.explore()
 		}
-		seg2 = newSegment(seg.x+seg.xSize/2, seg.y, seg.xSize/2, seg.ySize)
+		seg2 = newSegment(seg.x+seg.xSize/2, seg.y, seg.xSize-seg.xSize/2, seg.ySize)
 		seg2.amount = seg.amount - seg1.amount
 		return
 	}
@@ -185,7 +191,7 @@ func (seg *segment) divide2() (seg1 *segment, seg2 *segment) {
 	for err != nil {
 		err = seg1.explore()
 	}
-	seg2 = newSegment(seg.x, seg.y+seg.ySize/2, seg.xSize, seg.ySize/2)
+	seg2 = newSegment(seg.x, seg.y+seg.ySize/2, seg.xSize, seg.ySize-seg.ySize/2)
 	seg2.amount = seg.amount - seg1.amount
 	return
 }
@@ -217,7 +223,18 @@ func searchArea(xStart, yStart, sizeX, sizeY, step int, ch chan DigData, limit i
 				fmt.Println(err)
 			}
 			if seg.amount >= limit {
-				go explore(seg, ch)
+				for areasNumber > areaLimit {
+					time.Sleep(time.Millisecond * 10)
+				}
+				go func() {
+					muExp.Lock()
+					areasNumber++
+					muExp.Unlock()
+					explore(seg, ch)
+					muExp.Lock()
+					areasNumber--
+					muExp.Unlock()
+				}()
 				// if !expChainFull {
 				// 	go explore(seg, ch)
 				// } else {
