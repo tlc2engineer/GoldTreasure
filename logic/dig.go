@@ -36,9 +36,9 @@ func DigG(ch chan DigData, cht chan treasData, chLic chan *models.License, chUse
 				depth++
 				if tlist != nil {
 					trCount--
-					stat.NewSendTreas(len(tlist))
+					stat.NewSendTreas(len(*tlist))
 					stat.NewDigTlist()
-					cht <- treasData{tlist: tlist, x: int(ddata.x), y: int(ddata.y), depth: int(depth - 1), dt: dt, licType: int(*license.DigAllowed)}
+					cht <- treasData{tlist: *tlist, x: int(ddata.x), y: int(ddata.y), depth: int(depth - 1), dt: dt, licType: int(*license.DigAllowed)}
 				}
 			}
 		}

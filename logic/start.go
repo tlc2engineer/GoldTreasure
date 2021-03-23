@@ -4,7 +4,6 @@ import (
 	"Golden/api"
 	"Golden/models"
 	"Golden/stat"
-	"time"
 )
 
 var expChainFull bool
@@ -31,7 +30,7 @@ func Start() {
 	go PostCashG(chTrlist, chCoin, false)
 	go PostCashG(chTrlist, chCoin, false)
 	go PostCashG(chTrlist, chCoin, false)
-	chDig := make(chan DigData, 200)
+	chDig := make(chan DigData, 5)
 	chLic := make(chan *models.License, 10)
 	chUsedLic := make(chan *int64, 10)
 
@@ -66,16 +65,18 @@ func Start() {
 	// go DigG(chDig, chTrlist, chLic, chUsedLic)
 
 	//go exploreSegment(0, 0, 3498, 1748, 4, chDig)
-	go func() {
-		for {
-			select {
-			case <-time.Tick(time.Millisecond * 500):
-				if expChainFull != (len(chDig) > 100) {
-					expChainFull = len(chDig) > 100
-				}
-			}
-		}
-	}()
+
+	// go func() {
+	// 	for {
+	// 		select {
+	// 		case <-time.Tick(time.Millisecond * 500):
+	// 			if expChainFull != (len(chDig) > 100) {
+	// 				expChainFull = len(chDig) > 100
+	// 			}
+	// 		}
+	// 	}
+	// }()
+
 	//research(100, 100+8*20, 8)
 	//research(100, 100+16*20, 16)
 	//go searchSegments(0, 1841, 3491, 3491, segmentSize, targetAmount, chDig)
